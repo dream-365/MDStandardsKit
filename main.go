@@ -65,7 +65,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	dirtyPolicy := false
 	if *policyFromHead {
-		tmpDir, dirty, cleanup, err := materializePolicyFromHEAD(rootAbs, policyDir)
+		tmpDir, dirty, cleanup, err := materializePolicyFromHEAD(rootAbs, policyDir, *baselinePath)
 		if err != nil {
 			fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
 			return 2
@@ -74,7 +74,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		policyDir = tmpDir
 		dirtyPolicy = dirty
 		if dirty {
-			fmt.Fprintln(stderr, "warning: policy files have uncommitted changes; running report-only")
+			fmt.Fprintln(stderr, "warning: policy or baseline files have uncommitted changes; running report-only")
 		}
 	}
 
@@ -253,10 +253,32 @@ func loadBaseline(path string) ([]BaselineEntry, error) {
 	return out, nil
 }
 
+// gitPathDirty reports whether path has uncommitted changes in the git worktree
+// rooted at root. Paths outside root are treated as dirty: the HEAD check cannot
+// verify them, and the safe default is report-only.
+func gitPathDirty(root, path string) bool {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return true
+	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return true
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return true
+	}
+	status, err := exec.Command("git", "-C", root, "status", "--porcelain", "--", filepath.ToSlash(rel)).Output()
+	if err != nil {
+		return true
+	}
+	return strings.TrimSpace(string(status)) != ""
+}
+
 // materializePolicyFromHEAD writes the committed policy bundle into a temp
 // directory so an Agent editing the working tree cannot change the rules that
 // judge it (D11). The dirty flag tells the caller to run report-only.
-func materializePolicyFromHEAD(root, policyDir string) (string, bool, func(), error) {
+func materializePolicyFromHEAD(root, policyDir, baselinePath string) (string, bool, func(), error) {
 	noop := func() {}
 	rel, err := filepath.Rel(root, policyDir)
 	if err != nil {
@@ -267,8 +289,10 @@ func materializePolicyFromHEAD(root, policyDir string) (string, bool, func(), er
 	}
 	rel = filepath.ToSlash(rel)
 
-	status, _ := exec.Command("git", "-C", root, "status", "--porcelain", "--", rel).Output()
-	dirty := strings.TrimSpace(string(status)) != ""
+	dirty := gitPathDirty(root, policyDir)
+	if baselinePath != "" && gitPathDirty(root, baselinePath) {
+		dirty = true
+	}
 
 	list, err := exec.Command("git", "-C", root, "ls-tree", "-r", "--name-only", "HEAD", "--", rel).Output()
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -284,5 +285,67 @@ func TestExampleRepoPasses(t *testing.T) {
 	}
 	if r.Stats.Edges != 1 {
 		t.Fatalf("edges = %d, want 1", r.Stats.Edges)
+	}
+}
+
+func TestPolicyFromHeadDowngradesOnDirtyBaseline(t *testing.T) {
+	root := t.TempDir()
+	if out, err := exec.Command("cp", "-R", "policy", filepath.Join(root, "policy")).CombinedOutput(); err != nil {
+		t.Fatalf("copy policy: %v\n%s", err, out)
+	}
+	writeFile(t, root, "docs/specs/001.md", doc("Approved", "docs/architecture/missing.md"))
+	writeFile(t, root, "docs/architecture/003.md", doc("Published"))
+	baseline := `[{"rule":"refs.missing_target","document":"docs/specs/001.md","target":"docs/architecture/missing.md"}]`
+	writeFile(t, root, "baseline.json", baseline)
+
+	gitRun(t, root, "init")
+	gitRun(t, root, "add", ".")
+	gitRun(t, root, "commit", "-m", "init")
+
+	// Dirty baseline: the worktree baseline differs from HEAD. The HEAD policy
+	// check must downgrade to report-only instead of blocking on the empty file.
+	writeFile(t, root, "baseline.json", "[]")
+	code, out, errs := runCLI(t, root,
+		"--policy", filepath.Join(root, "policy"),
+		"--policy-from-head",
+		"--phase", "1",
+		"--baseline", filepath.Join(root, "baseline.json"),
+		"--format", "json",
+	)
+	if code != 0 {
+		t.Fatalf("dirty baseline: exit = %d, want 0; stderr=%s out=%s", code, errs, out)
+	}
+	if !strings.Contains(errs, "report-only") {
+		t.Fatalf("dirty baseline: stderr = %q, want report-only warning", errs)
+	}
+
+	// Clean baseline: the committed suppression applies and the run stays clean.
+	gitRun(t, root, "checkout", "--", "baseline.json")
+	code, out, errs = runCLI(t, root,
+		"--policy", filepath.Join(root, "policy"),
+		"--policy-from-head",
+		"--phase", "1",
+		"--baseline", filepath.Join(root, "baseline.json"),
+		"--format", "json",
+	)
+	if code != 0 {
+		t.Fatalf("clean baseline: exit = %d, want 0; stderr=%s out=%s", code, errs, out)
+	}
+	if strings.Contains(errs, "report-only") {
+		t.Fatalf("clean baseline: unexpected report-only warning: %s", errs)
+	}
+}
+
+func gitRun(t *testing.T, root string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", append([]string{"-C", root}, args...)...)
+	cmd.Env = append(os.Environ(),
+		"GIT_AUTHOR_NAME=test",
+		"GIT_AUTHOR_EMAIL=test@example.com",
+		"GIT_COMMITTER_NAME=test",
+		"GIT_COMMITTER_EMAIL=test@example.com",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
 }
