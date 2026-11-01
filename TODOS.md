@@ -14,14 +14,14 @@
 **Priority:** P2
 **Depends on:** v1 rubric, reviewer, audit, and report shipped and run on real specs.
 
+## Completed
+
 ### Release tarball for the doc-writer skill
 
 **What:** Build `doc-writer-skill.tar.gz` in the release workflow.
 
-**Why:** The design originally promised it; the release workflow currently uploads only binaries.
+**Why:** The design originally promised it; the release workflow previously uploaded only binaries.
 
-**Context:** Dropped from v1 (D5). Manual copy is the v1 install path. Add a release step that packages `.claude/skills/doc-writer/`, `tools/qualitycheck/`, and the rubric.
+**Context:** The release job now packages `.claude/skills/doc-writer/`, `tools/qualitycheck/`, `policy/`, `go.mod`, and `go.sum` on every `v*` tag.
 
-**Effort:** S
-**Priority:** P3
-**Depends on:** v1 skill and tool stable.
+**Completed:** 2026-11-02 (no version source)
