@@ -20,9 +20,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 	findingsPath := fs.String("findings", "", "findings JSON path")
 	docPath := fs.String("doc", "", "target spec.md path")
 	writerSession := fs.String("writer-session", "", "writer session id; required for -audit")
-	outPath := fs.String("out", "quality-report.md", "report output path")
+	outPath := fs.String("out", "", "report output path (audit defaults to quality-report.md)")
+	referencePath := fs.String("reference", "", "reference findings JSON for -calibrate")
 	validate := fs.Bool("validate-rubric", false, "validate the rubric and exit")
 	audit := fs.Bool("audit", false, "audit findings against the document")
+	calibrate := fs.Bool("calibrate", false, "compare two independent reviewer passes")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -49,10 +51,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "usage: qualitycheck -audit -rubric <rubric.yaml> -findings <findings.json> -doc <spec.md> -writer-session <id>")
 			return 2
 		}
-		for _, input := range []string{*rubricPath, *findingsPath, *docPath} {
-			if samePath(*outPath, input) {
-				fmt.Fprintf(stderr, "-out %q must not overwrite an input file\n", *outPath)
-				return 2
+		if *outPath != "" {
+			for _, input := range []string{*rubricPath, *findingsPath, *docPath} {
+				if samePath(*outPath, input) {
+					fmt.Fprintf(stderr, "-out %q must not overwrite an input file\n", *outPath)
+					return 2
+				}
 			}
 		}
 		res, err := Audit(*rubricPath, *findingsPath, *docPath, *writerSession)
@@ -61,7 +65,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 			return 2
 		}
 		report := RenderReport(res)
-		if err := os.WriteFile(*outPath, []byte(report), 0o644); err != nil {
+		out := *outPath
+		if out == "" {
+			out = "quality-report.md"
+		}
+		if err := os.WriteFile(out, []byte(report), 0o644); err != nil {
 			fmt.Fprintln(stderr, err)
 			return 2
 		}
@@ -69,6 +77,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 		if len(res.Failures) > 0 {
 			return 1
 		}
+		return 0
+	case *calibrate:
+		if *rubricPath == "" || *referencePath == "" || *findingsPath == "" {
+			fmt.Fprintln(stderr, "usage: qualitycheck -calibrate -rubric <rubric.yaml> -reference <findings.json> -findings <findings.json> [-out <report.md>]")
+			return 2
+		}
+		res, err := Calibrate(*rubricPath, *referencePath, *findingsPath)
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			return 2
+		}
+		report := RenderCalibration(res)
+		if *outPath != "" {
+			if err := os.WriteFile(*outPath, []byte(report), 0o644); err != nil {
+				fmt.Fprintln(stderr, err)
+				return 2
+			}
+		}
+		fmt.Fprint(stdout, report)
 		return 0
 	default:
 		fmt.Fprintln(stderr, "one of -validate-rubric or -audit is required")
@@ -145,6 +172,39 @@ func RenderReport(res AuditResult) string {
 			fmt.Fprintf(&b, "- %s\n", escapeCell(failure))
 		}
 	}
+	return b.String()
+}
+
+func RenderCalibration(res CalibrationResult) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Calibration Report\n\n")
+	fmt.Fprintf(&b, "- Reference: `%s`\n", escapeCell(res.Reference))
+	fmt.Fprintf(&b, "- Candidate: `%s`\n", escapeCell(res.Candidate))
+	fmt.Fprintf(&b, "- Compared: %d\n", res.Compared)
+	fmt.Fprintf(&b, "- Exact agreement: %.1f%%\n", res.Agreement)
+	fmt.Fprintf(&b, "- Weighted kappa (quadratic): %.3f\n", res.WeightedKappa)
+	if res.CoreCompared > 0 {
+		fmt.Fprintf(&b, "- Core items: compared %d, exact %.1f%%, weighted kappa %.3f\n", res.CoreCompared, res.CoreAgreement, res.CoreWeightedKappa)
+	}
+	fmt.Fprintf(&b, "\n")
+	if len(res.StatusMismatches) > 0 {
+		fmt.Fprintf(&b, "Signal mismatches (na vs scored): %s\n\n", escapeCell(strings.Join(res.StatusMismatches, ", ")))
+	}
+	fmt.Fprintf(&b, "| ref\\cand | 0 | 1 | 2 |\n|---|---:|---:|---:|\n")
+	for i := 0; i < 3; i++ {
+		fmt.Fprintf(&b, "| %d | %d | %d | %d |\n", i, res.Confusion[i][0], res.Confusion[i][1], res.Confusion[i][2])
+	}
+	fmt.Fprintf(&b, "\n## Dimensions\n\n| Dimension | Compared | Exact | Agreement | Weighted kappa |\n|---|---:|---:|---:|---:|\n")
+	for _, d := range res.Dimensions {
+		fmt.Fprintf(&b, "| %s | %d | %d | %.1f%% | %.3f |\n", escapeCell(d.Name), d.Compared, d.Exact, d.Agreement, d.WeightedKappa)
+	}
+	if len(res.Disagreements) > 0 {
+		fmt.Fprintf(&b, "\n## Disagreements\n\n")
+		for _, d := range res.Disagreements {
+			fmt.Fprintf(&b, "- `%s`: reference %d, candidate %d\n", d.ID, d.Reference, d.Candidate)
+		}
+	}
+	fmt.Fprintf(&b, "\n> Inter-rater agreement, not human truth. A high kappa means the instrument is reproducible, not that its levels are correct.\n")
 	return b.String()
 }
 

@@ -8,11 +8,11 @@
 
 **Why:** Needed before Stage 1/2 can gate on the score; v1 is report-only.
 
-**Context:** Deferred from the v1 scorecard (D1). The design's calibration section specifies 5 gold specs, core weighted kappa >= 0.6, and the 25th percentile of human-approved specs. Start by defining the gold schema and the kappa inputs, including `na` and missing ratings.
+**Context:** Deferred from the v1 scorecard (D1). The scaffold exists at `.claude/skills/doc-writer/spec/quality/calibration/gold.v1.json` with three candidate entries, and `qualitycheck -calibrate` computes inter-rater agreement and weighted kappa. Human adjudication and two more specs remain before any threshold.
 
 **Effort:** M
 **Priority:** P2
-**Depends on:** v1 rubric, reviewer, audit, and report shipped and run on real specs.
+**Depends on:** Ready to continue: v1 shipped and real reviews exist.
 
 ## Completed
 
