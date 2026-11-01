@@ -85,7 +85,7 @@ depends_on:
 ## 设计文档
 
 - [架构](docs/architecture/mdstandards-architecture.md)
-- [v1 规格](docs/specs/mdstandards-v1.md)
+- [v1 规格](docs/specs/SPEC-001-mdstandards/spec.md)
 
 ## 已知限制
 
