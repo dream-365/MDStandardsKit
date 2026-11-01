@@ -8,6 +8,7 @@
 - 目录名和标题只描述能力或领域，不出现 `M<N>`、里程碑编号或里程碑名称。
 - 固定文件：`spec.md`、`changelog.md`。
 - 附属资源：`assets/`（架构图、流程图、截图，禁止外部图床）、`schemas/` 或 `examples/`（JSON Schema、Protobuf、示例数据）。
+- 质量产物：`docs/quality/SPEC-xxx/quality-report.md` 与 `quality-findings.json`，随 Spec 提交；`docs/quality/` 不在 `governed_globs` 内。
 - 总索引：`docs/specs/README.md` 汇总编号、名称、状态与链接；新增 Spec 或状态流转时同步。
 - 归档：`Deprecated` / `Superseded` 移到 `docs/specs/archive/`，保留原目录名。
 
@@ -66,6 +67,13 @@ updated_at: 2026-11-01
 - 严禁写具体实现代码；允许抽象类、接口、数据契约。
 - 不把测试日志、偶发报错堆进背景；结论提炼后放进现状/差距或验收。
 - 围绕业务主线叙事，不把"写 Spec"本身当叙事线。
+
+## 质量评分
+
+- rubric：`spec/quality/rubric.v1.yaml`；item、权重或锚点变化即升版本，旧分数不可比。
+- 独立评审：另起会话，按 `reviewer.md` 产出 `quality-findings.json`；写作 Agent 不参与打分。
+- 审计：`qualitycheck -audit -rubric <rubric> -findings <findings.json> -doc <spec.md> -writer-session <id>`；证据必须逐字存在，分数由工具复算。
+- v1 只诊断、不阻断；校准与阈值在 follow-up。
 
 ## 提交
 

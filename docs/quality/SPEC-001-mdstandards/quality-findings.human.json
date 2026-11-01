@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "target": "docs/specs/SPEC-001-mdstandards/spec.md",
+  "target_sha256": "db8c9985081365e918a49876a7314c3a07f072cdcfc19415156721be0b86804f",
+  "reviewer": {
+    "role": "independent",
+    "model": "human-adjudicator",
+    "session_id": "human-spec-001-20261102",
+    "started_at": "2026-11-01T22:41:49Z"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 1,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 2,
+      "evidence": [],
+      "rationale": "human adjudication (strict reading)",
+      "missing": ""
+    }
+  ]
+}

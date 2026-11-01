@@ -36,9 +36,26 @@ v1 只支持技术 Spec，目录为 `docs/specs/SPEC-<三位数字>-<kebab>/spec
 2. **读闸门**：读 `spec/gates.md`，一次只问一个问题。
 3. **过闸门**：背景四问与痛点证据是硬性最小集。任一未答完，不写方案章节，只输出 Gate Report，不创建或修改 `spec.md`。
 4. **起草**：读 `spec/template.md`，写每一章前读 `spec/chapters/` 下对应的指南。只写能被评审的内容；不贴实现代码、测试日志或偶发报错。
-5. **自检**：读 `spec/checks.md`，逐条核对。每条要求文档中的位置或证据；`无`、`...`、`待补充` 不算回答。
+5. **自检与质量评分**：
+   - **5a 写作自检**：读 `spec/checks.md`，逐条核对。每条要求文档中的位置或证据；`无`、`...`、`待补充` 不算回答。
+   - **5b 独立质量评审**：另起独立评审上下文，按 `spec/quality/reviewer.md` 产出 `quality-findings.json`；运行 `qualitycheck -audit -writer-session <id>`，读 `quality-report.md`。写作修复后必须重新评审，只提交最终 findings/report。
 6. **外部闸门**：先 `-phase 0` 看全貌，再 `-phase 1` 阻断。命令见下。
 7. **修订**：修改已批准或已落地的 Spec 时，状态立即回退 `In Review`，更新 `updated_at`，在 `changelog.md` 追加记录；回退期间不改生产代码。
+
+## 质量评分卡
+
+- rubric：`spec/quality/rubric.v1.yaml`，唯一评分标准。
+- 评审协议：`spec/quality/reviewer.md`。
+- 输出契约：`spec/quality/findings.schema.json`。
+- 产物：`docs/quality/SPEC-xxx/quality-report.md` 与 `quality-findings.json`，随 Spec 提交；`docs/quality/` 不受 `governed_globs` 管理。
+- 评分卡只验证证据存在、章节位置与分数算术，不判断证据是否充分或真实。
+
+```bash
+<MDStandardsKit>/qualitycheck -validate-rubric -rubric <MDStandardsKit>/.claude/skills/doc-writer/spec/quality/rubric.v1.yaml
+<MDStandardsKit>/qualitycheck -audit -rubric <rubric> -findings <findings.json> -doc <spec.md> -writer-session <id> -out <report.md>
+```
+
+工具用 `go run ./tools/qualitycheck` 或 `go build ./tools/qualitycheck` 生成。
 
 ## 外部闸门
 
@@ -59,4 +76,4 @@ v1 只支持技术 Spec，目录为 `docs/specs/SPEC-<三位数字>-<kebab>/spec
 - 不要编造 `depends_on` 目标或 SPEC 引用。
 - 不要在 Spec 的目录、标题或正文里写里程碑编号或里程碑名称。
 - 不要修改 `policy/` 或 baseline 来绕过闸门。
-- 不要把 `spec/checks.md` 当作硬闸门；v1 的硬闸门只有 mdstandards，内容自检由人和评审确认。
+- 不要把 `spec/checks.md` 当作硬闸门；v1 的硬闸门仍只有 mdstandards，`qualitycheck` 只诊断、不阻断。

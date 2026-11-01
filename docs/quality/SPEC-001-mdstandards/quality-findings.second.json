@@ -1,0 +1,585 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "target": "docs/specs/SPEC-001-mdstandards/spec.md",
+  "target_sha256": "db8c9985081365e918a49876a7314c3a07f072cdcfc19415156721be0b86804f",
+  "reviewer": {
+    "role": "independent",
+    "model": "claude",
+    "session_id": "reviewer-spec-001-b-20261102",
+    "started_at": "2026-11-01T22:35:25Z"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.1 系统现状",
+          "quote": "仓库中的技术文档主要由 Agent 生成。每篇文档在 frontmatter 里声明 `type`、`status`、`owner` 与 `depends_on`，下游的 Agent 与评审者据此判断某篇文档能否作为开发依据。"
+        },
+        {
+          "section": "1.1 系统现状",
+          "quote": "1. Agent 生成或修改一篇 Spec，并在 `depends_on` 中写下一个或多个文档路径。\n2. 另一名 Agent 读取该 Spec，把 `depends_on` 指向的架构文档及其 `status` 当作输入。\n3. 文档进入评审、检索与下游生成流程。"
+        }
+      ],
+      "rationale": "1.1 交代了文档流水线中 Agent 与评审者的职责、三步核心流程，以及当前仅靠 frontmatter 元数据与人工抽查的技术现状。",
+      "missing": ""
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "1. 一份 Spec 声明 `depends_on` 指向某篇架构文档。\n2. Agent 把这篇架构文档及其状态当作开发依据。\n3. 没有任何东西验证它存在，也没有东西验证它已被批准。\n4. 构建全绿、页面都在、检索正常，代码却照着过期或未批准的架构写完了。"
+        }
+      ],
+      "rationale": "1.2 用四步编号链从声明依赖写到代码照过期架构完成，触发到后果完整可追。",
+      "missing": ""
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.3 重构/设计动机",
+          "quote": "触发点：office-hours 设计已于 2026-10-30 批准，v1 进入实现与接入阶段；如果此时仍只靠人工抽查，引用图缺陷会在接入后继续静默进入下游。"
+        }
+      ],
+      "rationale": "1.3 明确给出 office-hours 于 2026-10-30 批准、v1 进入实现接入这一触发点，并解释此时仍需闸门的原因。",
+      "missing": ""
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.4 非目标",
+          "quote": "不把闸门做出来的后果见 1.2：失败继续静默，代码继续照着过期或未批准的架构写。本次明确不做或延后："
+        },
+        {
+          "section": "1.4 非目标",
+          "quote": "- 必填字段、status 枚举、状态流转、复审有效期、审批来源校验（Deferred to Phase 2）。"
+        }
+      ],
+      "rationale": "1.4 先说明不做闸门的后果，再列出本次不做或延后的具体范围。",
+      "missing": ""
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "证据：截至 2026-11-01，在 `/Users/alang/Workspace`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
+        },
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "缺口：本次没有拿到一次具体事故的时间、涉及文件数与投入工时。这一点记入附录 A。"
+        }
+      ],
+      "rationale": "1.2 的 411 篇扫描是有日期与范围的度量，但它只说明依赖边几乎为零，不能证明失败链中的过期/未批准架构确实造成过后果；作者也承认缺少具体事故。",
+      "missing": ""
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "- **G1 引用存在**：每条 `depends_on` 的目标必须在受管语料中；缺失产出 `refs.missing_target`。验收：`TestMissingTargetBlocks`。\n- **G2 状态可依赖**：目标 `status` 必须逐字等于 `dependable_statuses` 中的某一项；缺失或大小写不符同样违规。验收：`TestNonDependableStatusBlocks`、`TestLowercaseStatusIsNotDependable`。\n- **G3 Fail-closed**：零受管文档在任一 phase 都退出 2；零解析文档与零依赖边在 phase ≥ 1 退出 2，策略降级不绕过这些覆盖断言；解析错误在 phase ≥ 1 且未触发策略降级时退出 2，触发降级时只报告并退出 0，不得静默通过。验收：`TestZeroGovernedDocumentsFailsClosed`、`TestZeroEdgesFailsClosed`、`TestExtractErrorFailsClosedInPhase1`（降级路径未覆盖）。\n- **G4 分阶段**：phase 0 不因违规或解析错误阻断（工具级错误仍退出 2）；phase 1 对基线外的新违规退出 1；基线按 `(rule, document, target)` 精确匹配。验收：`TestPhase0NeverBlocks`、`TestBaselineSuppressesKnownViolation`、`TestBaselineDoesNotSuppressRenamedTarget`。\n- **G5 稳定输出**：JSON 含 `schema_version`、`findings`、`extract_errors`、`stats`；findings 按 `(rule, document, target)` 排序，字节稳定。验收：`TestJSONSchemaAndStats`（仅覆盖 schema/stats）；排序与字节稳定性无独立测试。"
+        }
+      ],
+      "rationale": "G1–G5 每条都以具体测试名给出验收方式，部分条目同时注明测试覆盖缺口。",
+      "missing": ""
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "- **G3 Fail-closed**：零受管文档在任一 phase 都退出 2；零解析文档与零依赖边在 phase ≥ 1 退出 2，策略降级不绕过这些覆盖断言；解析错误在 phase ≥ 1 且未触发策略降级时退出 2，触发降级时只报告并退出 0，不得静默通过。验收：`TestZeroGovernedDocumentsFailsClosed`、`TestZeroEdgesFailsClosed`、`TestExtractErrorFailsClosedInPhase1`（降级路径未覆盖）。"
+        }
+      ],
+      "rationale": "G3 以“零受管文档/零解析文档/零依赖边”和退出码 2 给出明确数字阈值，G4 也含 phase 与退出码数字。",
+      "missing": ""
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "- **G1 引用存在**：每条 `depends_on` 的目标必须在受管语料中；缺失产出 `refs.missing_target`。验收：`TestMissingTargetBlocks`。\n- **G2 状态可依赖**：目标 `status` 必须逐字等于 `dependable_statuses` 中的某一项；缺失或大小写不符同样违规。验收：`TestNonDependableStatusBlocks`、`TestLowercaseStatusIsNotDependable`。\n- **G3 Fail-closed**：零受管文档在任一 phase 都退出 2；零解析文档与零依赖边在 phase ≥ 1 退出 2，策略降级不绕过这些覆盖断言；解析错误在 phase ≥ 1 且未触发策略降级时退出 2，触发降级时只报告并退出 0，不得静默通过。验收：`TestZeroGovernedDocumentsFailsClosed`、`TestZeroEdgesFailsClosed`、`TestExtractErrorFailsClosedInPhase1`（降级路径未覆盖）。\n- **G4 分阶段**：phase 0 不因违规或解析错误阻断（工具级错误仍退出 2）；phase 1 对基线外的新违规退出 1；基线按 `(rule, document, target)` 精确匹配。验收：`TestPhase0NeverBlocks`、`TestBaselineSuppressesKnownViolation`、`TestBaselineDoesNotSuppressRenamedTarget`。\n- **G5 稳定输出**：JSON 含 `schema_version`、`findings`、`extract_errors`、`stats`；findings 按 `(rule, document, target)` 排序，字节稳定。验收：`TestJSONSchemaAndStats`（仅覆盖 schema/stats）；排序与字节稳定性无独立测试。"
+        }
+      ],
+      "rationale": "共 5 个 Goal，落在 3–6 区间，但按规则/阶段/输出罗列，未按架构/性能/可靠性分类。",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG1** 必填字段、status 枚举、状态流转、TTL、审批来源校验（Deferred to Phase 2）。\n- **NG2** 循环引用检测（Deferred to Phase 2）。\n- **NG3** pre-commit 执行点（本次不做）。\n- **NG4** 包管理器分发（本次不做）。\n- **NG5** 多仓库语料合并（Deferred to Phase 2）。\n- **NG6** `doc_id` 稳定身份（Deferred to Phase 2）。\n- **NG7** Rego 非本地内置函数未禁用（本次不做；仅靠 10 秒求值上限兜底）。"
+        }
+      ],
+      "rationale": "NG1–NG7 每条都标注了 Deferred to Phase 2 或本次不做。",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG1** 必填字段、status 枚举、状态流转、TTL、审批来源校验（Deferred to Phase 2）。\n- **NG2** 循环引用检测（Deferred to Phase 2）。\n- **NG3** pre-commit 执行点（本次不做）。\n- **NG4** 包管理器分发（本次不做）。\n- **NG5** 多仓库语料合并（Deferred to Phase 2）。\n- **NG6** `doc_id` 稳定身份（Deferred to Phase 2）。\n- **NG7** Rego 非本地内置函数未禁用（本次不做；仅靠 10 秒求值上限兜底）。"
+        }
+      ],
+      "rationale": "NG1–NG7 都是围绕闸门规则范围、执行点与语料边界划定的排除项，NG2/NG6/NG7 在第 7 章还有对应限制说明。",
+      "missing": ""
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "```mermaid\nflowchart LR\n    CLI[CLI flags] --> Load[load standard.json]\n    Load --> Extract[extract corpus]\n    Extract --> Cover[coverage assertions]\n    Cover --> Eval[evaluate Rego]\n    Eval --> Base[baseline filter]\n    Base --> Report[render table / json / github]\n    Report --> Exit[exit 0 / 1 / 2]\n```"
+        }
+      ],
+      "rationale": "3.1 给出端到端 mermaid 拓扑，3.2 与 3.3 进一步给出模块职责和编号数据流。",
+      "missing": ""
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "3.1 总体架构",
+          "quote": "```mermaid\nflowchart LR\n    CLI[CLI flags] --> Load[load standard.json]\n    Load --> Extract[extract corpus]\n    Extract --> Cover[coverage assertions]\n    Cover --> Eval[evaluate Rego]\n    Eval --> Base[baseline filter]\n    Base --> Report[render table / json / github]\n    Report --> Exit[exit 0 / 1 / 2]\n```"
+        }
+      ],
+      "rationale": "3.1 的 flowchart 画出完整链路，但节点只有名称，模块职责要到 3.2 才展开，3.1 内没有逐模块职责。",
+      "missing": ""
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "- **新增**：单二进制 `mdstandards`、`policy/` 策略包、CI 与 Agent hook 两个执行点。\n- **改造**：无。v1 不修改既有文档的 frontmatter，也不改既有 PDS 校验器。\n- **保持不变**：文档目录结构、`depends_on` 语义、人工评审流程。"
+        }
+      ],
+      "rationale": "3.1 用新增/改造/保持不变三组清单写清了变更集合。",
+      "missing": ""
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "3.4 关键选型与约束",
+          "quote": "- **策略即数据**：受管范围与可依赖状态写在 `standard.json`，不写死在程序里。"
+        },
+        {
+          "section": "3.4 关键选型与约束",
+          "quote": "- **单 `main` 包**：v1 只有几百行、没有第二个调用方；拆 `cmd/` + `internal/` 属于过早抽象（决策 D2）。"
+        }
+      ],
+      "rationale": "3.4 为各项关键选型给出理由，但没有把详细对比显式指向第 7 章。",
+      "missing": ""
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4. 详细设计",
+          "quote": "| 实体 | 字段 | 类型 | 必填 | 说明 |\n|---|---|---|---|---|\n| Standard | standard_version | string | 是 | 当前只接受 `\"1\"` |\n| Standard | governed_globs | string[] | 是 | 受管路径模式，非空 |\n| Standard | dependable_statuses | string[] | 是 | 可依赖状态字面量，非空 |"
+        }
+      ],
+      "rationale": "4.3 给出 Standard/Document/Finding 等实体的字段类型与必填性，4.4 另给出 CLI 接口契约。",
+      "missing": ""
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.3 数据模型与契约",
+          "quote": "| 实体 | 字段 | 类型 | 必填 | 说明 |\n|---|---|---|---|---|\n| Standard | standard_version | string | 是 | 当前只接受 `\"1\"` |\n| Standard | governed_globs | string[] | 是 | 受管路径模式，非空 |\n| Standard | dependable_statuses | string[] | 是 | 可依赖状态字面量，非空 |\n| Standard | identity | string | 是 | 固定为 `repo_relative_path` |\n| Document | path | string | 是 | 仓库相对 POSIX 路径，文档身份 |\n| Document | type | string | 否 | frontmatter 原值，v1 不校验 |\n| Document | status | string | 否 | 缺失按不可依赖处理 |"
+        }
+      ],
+      "rationale": "4.3 的字段表包含实体、字段、类型、必填与说明，说明列给出“只接受 1”“非空”“缺失按不可依赖处理”等校验规则。",
+      "missing": ""
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.4 接口与协议",
+          "quote": "CLI 参数：\n\n| 参数 | 默认 | 说明 |\n|---|---|---|\n| `-root` | `.` | 仓库根；只决定哪些文件受管 |\n| `-policy` | `policy` | 策略包目录，相对当前工作目录解析 |\n| `-phase` | `1` | `0` 只报告、`1` 基线 + 阻断、`2` 完全阻断 |\n| `-format` | `table` | `table`、`json`、`github` |"
+        },
+        {
+          "section": "4.4 接口与协议",
+          "quote": "输出协议：\n\n- `table`：人类可读的摘要与逐条 finding。\n- `json`：机器可读报告，供 CI 归档与下游消费。\n- `github`：每条 finding 与 extract_error 各输出一行 `::error file=<path>::[<rule>] <message>`，另有一行 `::notice::` 统计。"
+        }
+      ],
+      "rationale": "4.4 用参数表定义 CLI 请求，用 table/json/github 三种输出协议定义响应；退出码在 4.6 另行定义。",
+      "missing": ""
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "4.5 核心流程与时序",
+          "quote": "    alt 阻断阶段且未降级\n        M->>B: 按三元组过滤\n        B-->>M: 剩余 findings\n    end\n    M-->>U: 报告 + exit 0/1/2"
+        }
+      ],
+      "rationale": "4.5 有完整时序图并含基线过滤分支，但 policy.load_error 与 extract_error 只作为返回消息，未画出异常处理分支。",
+      "missing": ""
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.6 异常处理与错误码",
+          "quote": "| 规则 ID | 触发场景 | 处理策略 |\n|---|---|---|\n| `refs.missing_target` | `depends_on` 目标不在受管语料中 | 计为 finding；阻断阶段退出 1 |\n| `refs.status_not_dependable` | 目标状态缺失或不在 `dependable_statuses` 中 | 计为 finding；阻断阶段退出 1 |\n| `extract.parse_error` | 无 frontmatter、YAML 非法、非映射等 | 计入 `extract_errors`；未降级的阻断阶段退出 2，降级时只报告；不可被基线抑制 |\n| `policy.load_error` | 策略包、标准数据或版本不合法 | 立即退出 2，不产出 findings |"
+        }
+      ],
+      "rationale": "4.6 的错误码表为每个规则 ID 给出触发场景与处理策略。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（`[estimated]`，待实测）。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-005** 闸门必须 fail-closed：零受管文档、策略加载失败在任何 phase 都不得返回成功；零解析文档、零依赖边在 `phase >= 1` 都不得返回成功；解析错误在阻断阶段且未触发策略降级时不得返回成功。覆盖断言不受策略降级影响。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-006** 同一输入必须产出字节稳定的 JSON，便于 CI 比较与归档。"
+        }
+      ],
+      "rationale": "NFR-001/002/003 给出秒级阈值，NFR-005/006/007 以明确失败条件、字节稳定与退出码作为验收方式。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（`[estimated]`，待实测）。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-005** 闸门必须 fail-closed：零受管文档、策略加载失败在任何 phase 都不得返回成功；零解析文档、零依赖边在 `phase >= 1` 都不得返回成功；解析错误在阻断阶段且未触发策略降级时不得返回成功。覆盖断言不受策略降级影响。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-007** stdout 输出结构化报告；stderr 输出 `policy.load_error`、`coverage error`、`baseline error` 等可定位的错误原因；退出码固定为 0/1/2。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-008** frontmatter 是不可信输入：单文件上限 1 MiB，疑似 YAML 别名展开直接拒绝，策略求值有 10 秒上限。"
+        }
+      ],
+      "rationale": "第 5 章分别用 5.1–5.4 覆盖性能、可靠性、可观测性与安全，并对不适用的子项作了说明。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（`[estimated]`，待实测）。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-002** Agent hook 场景下，≤200 篇文档的 p95 应 < 2 秒，超预算时降级为只警告（尚未实现）。"
+        }
+      ],
+      "rationale": "未实测的 NFR-001 标了 [estimated]/待实测，未实现的 NFR-002 明确写了尚未实现。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.1 发布与灰度",
+          "quote": "- **阶段 0（只报告）**：不因违规或解析错误阻断（退出 0；零受管文档、策略加载失败等工具级错误仍退出 2），上传 `findings.json` 和注解，收集存量。\n- **阶段 1（基线 + 阻断新增）**：存量写入 `baseline.json`，只对基线之外的新违规退出非零。\n- **阶段 2（清空基线）**：基线清空后转为完全阻断。\n\n晋级条件：连续两周的新增违规数为 0，才允许 0 → 1；基线为空才允许 1 → 2。"
+        }
+      ],
+      "rationale": "6.1 给出阶段 0/1/2 的发布策略、晋级条件与观察期。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.2 数据迁移与兼容性",
+          "quote": "- 不迁移历史数据；存量违规用 baseline 记录，不修改旧文档来凑合规。\n- 真实语料几乎没有 `depends_on`（唯一一处为空数组），以 phase 1 直接运行会因“零依赖边”退出 2；回填 `depends_on` 是独立的 v2 任务。"
+        }
+      ],
+      "rationale": "6.2 明确不迁移历史数据、存量用 baseline 记录，并说明真实语料的零依赖边问题。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.3 上线验证与冒烟",
+          "quote": "冒烟清单：\n\n1. `make check` 在本仓库退出 0；示例语料用 `./mdstandards -root ./testdata/example-repo -policy ./policy -phase 1 -format json` 单独冒烟。\n2. `-phase 0 -format json` 在存在违规的语料上退出 0，且 `findings`、`extract_errors`、`stats` 完整。\n3. `-phase 1 -format github` 对新增违规输出 `::error` 注解并退出 1。\n4. `-policy-from-head` 在策略目录干净时读取 HEAD；在语料满足覆盖断言的前提下，策略或 baseline 有未提交改动时打印警告并退出 0；若同时触发覆盖断言（零受管文档、零解析文档、零依赖边），仍退出 2。\n\n观察指标：`findings` 数量、`extract_errors` 数量、`documents_matched`、`edges_evaluated`、退出码分布。"
+        }
+      ],
+      "rationale": "6.3 列出四条冒烟步骤并给出 findings、extract_errors、documents_matched 等观察指标。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "回滚触发条件（可观测）：\n\n- **误报**：任一 phase 1 运行中，经人工复核确认为误报的阻断 finding ≥ 1，或连续 2 个工作日误报率 > 5%。\n- **工具错误**：`policy.load_error`、零受管文档、`phase >= 1` 的零解析文档或零依赖边，或未降级时的 extract_error，任一出现 1 次。\n- **基线失配**：目标重命名导致旧基线条目失配 ≥ 1，且新增 finding 被确认为合法引用。\n- **性能**：全量检查 p95 > 10 秒连续 3 次。\n- **策略降级**：`-policy-from-head` 因工作区脏改动降级为只报告 ≥ 1 次，且变更未在当班确认。"
+        }
+      ],
+      "rationale": "6.4 的触发条件包含误报率 5%、连续 2 个工作日、p95 > 10 秒连续 3 次等可观测数字。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "回滚步骤：\n\n1. 把 CI 的 `-phase` 从 1 调回 0，保留 `findings.json` 作为证据。\n2. 停止使用该规则阻断合并；规则修复合入后再晋级。\n3. 若误报来自规则本身，修正 `policy/` 并走 CODEOWNERS 评审；不得直接加 baseline 掩盖。\n4. 若基线失配，删除过期条目并重新暴露违规；不得新增条目掩盖。\n5. 工具级错误未修复前，不恢复阻断。"
+        }
+      ],
+      "rationale": "6.4 给出五步可执行回滚步骤，包括把 -phase 从 1 调回 0 和修复规则/基线。",
+      "missing": ""
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "- **思路**：维持现状，靠评审者人工检查 `depends_on` 与目标状态。\n- **优点**：零开发成本。\n- **淘汰原因**：Agent 产出是指数的，人工吞吐固定；失败是静默的，抽查只能覆盖抽样，无法在合并前拦住引用图缺陷。"
+        }
+      ],
+      "rationale": "7.1 给出 Status Quo 的思路、优点，并用淘汰原因说明人工抽查的成本与静默失败风险。",
+      "missing": ""
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "- **思路**：只校验每篇文档的 frontmatter 字段是否齐全、格式是否正确。\n- **优点**：实现简单，规则直观。\n- **淘汰原因**：失败模式是文档引用图，不是单个文件的字段格式；单文件检查抓不到“目标不存在或未批准”。"
+        }
+      ],
+      "rationale": "7.2 给出单文件检查器方案，并以“失败模式是引用图而非字段格式”作为淘汰原因，直接对应当前约束。",
+      "missing": ""
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "| 维度 | A 人工抽查 | B 单文件检查 | C Schema + 薄校验 | D OPA/Rego（当前） |\n| --- | --- | --- | --- | --- |\n| 能发现引用图缺陷 | 否 | 否 | 是 | 是 |\n| 策略可独立评审 | 否 | 否 | 否 | **是** |\n| 新增规则成本 | 低 | 低 | 中（改代码） | 低（改 Rego） |\n| 运行时依赖 | 无 | 无 | 无 | 内嵌 OPA |\n| 契合 v1 范围 | 否 | 否 | 部分 | **是** |"
+        }
+      ],
+      "rationale": "7.5 的矩阵维度覆盖能否发现引用图缺陷、策略是否可独立评审、规则成本、运行时依赖与 v1 范围。",
+      "missing": ""
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "- **思路**：Go 单二进制内嵌 OPA，规则放在 `policy/`，标准数据放在 `standard.json`。\n- **理由**：规则与程序分离，策略可独立评审；单二进制无额外运行时；基线与分阶段可复用同一套求值结果。"
+        }
+      ],
+      "rationale": "7.4 选定 D 的理由（策略可独立评审、单二进制、基线与分阶段复用）与第 2 章 Goals 及 3.4 选型一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **REQ-010** 对每条依赖边，若目标路径不在语料中，应产出 `refs.missing_target`。\n- **REQ-011** 对每条依赖边，若目标文档的 `status` 不等于任何 `dependable_statuses` 字面量，应产出 `refs.status_not_dependable`；`status` 缺失按同一规则处理。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-020** 受管匹配数为 0 时，进程应退出 2。\n- **REQ-021** `phase >= 1` 且解析出的文档数为 0 时，进程应退出 2。\n- **REQ-022** `phase >= 1` 且依赖边总数为 0 时，进程应退出 2。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-030** `phase = 0` 时，进程不因 finding 或 extract_error 阻断（退出 0），但 findings 与 extract_errors 仍应完整输出；零受管文档、策略加载失败等工具级错误仍按 REQ-020 与前置条件退出 2。\n- **REQ-031** 在未触发策略降级（REQ-051）的前提下，`phase >= 1` 且未指定 `-baseline` 时，任何 finding 都导致退出 1。\n- **REQ-032** 在阻断且未触发策略降级时，指定 `-baseline` 后，`(rule, document, target)` 与基线条目精确匹配的 finding 应被抑制。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-040** `-format json` 输出应包含 `schema_version`、`findings`、`extract_errors`、`stats`。\n- **REQ-041** findings 应按 `(rule, document, target)` 排序，保证字节稳定。"
+        }
+      ],
+      "rationale": "G1/G2 对应 4.7.2 的两条规则，G3 对应 4.7.3 覆盖断言，G4 对应 4.7.4 阶段与基线，G5 对应 4.7.5 输出排序。",
+      "missing": ""
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **NFR-005** 闸门必须 fail-closed：零受管文档、策略加载失败在任何 phase 都不得返回成功；零解析文档、零依赖边在 `phase >= 1` 都不得返回成功；解析错误在阻断阶段且未触发策略降级时不得返回成功。覆盖断言不受策略降级影响。"
+        },
+        {
+          "section": "全文",
+          "quote": "4. 执行覆盖断言：零受管文档、阻断阶段的零文档/零依赖边直接退出 2。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **NFR-006** 同一输入必须产出字节稳定的 JSON，便于 CI 比较与归档。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-041** findings 应按 `(rule, document, target)` 排序，保证字节稳定。"
+        }
+      ],
+      "rationale": "NFR-005 的 fail-closed 条件与 3.3 的覆盖断言一致，NFR-006 的字节稳定要求与 REQ-041 的排序规则一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "晋级条件：连续两周的新增违规数为 0，才允许 0 → 1；基线为空才允许 1 → 2。"
+        },
+        {
+          "section": "全文",
+          "quote": "1. 把 CI 的 `-phase` 从 1 调回 0，保留 `findings.json` 作为证据。"
+        }
+      ],
+      "rationale": "6.4 回滚第一步把 phase 从 1 调回 0，与 6.1 的三阶段发布及晋级条件一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **REQ-001** 工具应遍历每个 `governed_globs` 模式，把匹配的文件解析为语料中的一条 document。\n- **REQ-002** 语料中的每个受管文档应恰好产出一条 document 或一条 extract_error，不得静默丢弃。\n- **REQ-003** frontmatter 解析应读取 `type`、`status`、`owner`、`depends_on`；缺失的可选字段留空。"
+        }
+      ],
+      "rationale": "正文均以具体 REQ/NFR 条款和测试名作答；“无”只出现在“改造：无”和验收表“无测试”等明确披露中，不是待补充占位。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "单二进制内嵌 OPA 引擎；策略包从仓库 `policy/` 读取，`policy/data/standard.json` 是受管范围与可依赖状态的唯一事实来源。"
+        }
+      ],
+      "rationale": "全文只有架构图、时序图、参数/契约表，没有实现代码块、测试日志或偶发报错堆砌。",
+      "missing": ""
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "证据：截至 2026-11-01，在 `/Users/alang/Workspace`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（`[estimated]`，待实测）。"
+        }
+      ],
+      "rationale": "唯一实测数字（411 篇/1 篇）带日期与扫描范围；未实测的性能指标标了 [estimated]/待实测。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "depends_on:\n  - docs/architecture/mdstandards-architecture.md"
+        }
+      ],
+      "rationale": "depends_on 只指向仓库内架构文档，正文没有 SPEC-xxx 伪引用，也没有 M<N> 标记。",
+      "missing": ""
+    }
+  ]
+}

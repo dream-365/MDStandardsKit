@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "target": "testdata/example-repo/docs/specs/example-spec.md",
+  "target_sha256": "8eff17bacf3a9656376dbc78c58bf17d9d748da213bcbda650d55fc20199bc53",
+  "reviewer": {
+    "role": "independent",
+    "model": "claude",
+    "session_id": "reviewer-legacy-20261102",
+    "started_at": "2026-11-01T22:27:29Z"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档正文只有一句依赖说明，没有系统现状章节，未写模块职责、核心流程或当前技术栈。",
+      "missing": "缺少「1.1 系统现状」：应说明模块职责、核心调用链与数据流，以及当前技术栈。"
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有痛点章节，全文不存在从触发到后果的分步失败链。",
+      "missing": "缺少「1.2 核心技术痛点」：应给出编号的触发、中间失败到用户可见后果的因果链。"
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "全文只有一句“应当通过检查”的说明，没有解释为什么现在做这项工作。",
+      "missing": "缺少「1.3 重构/设计动机」：应写明业务或技术触发点，以及为什么现在而不是以后做。"
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有非目标章节，既未列非目标，也未说明不做的后果。",
+      "missing": "缺少「1.4 非目标」：应给出本次明确不做的范围，并说明不做会带来什么后果。"
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有痛点章节，也没有事故、度量或带出处的引述等可核实证据。",
+      "missing": "缺少「1.2 核心技术痛点」中的可核实证据：应给出事故时间/文件/后果、度量数字或带出处的引述，并与失败链对应。"
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "全文没有目标章节，没有任何 Goal，更无验收方式。",
+      "missing": "缺少「2.1 目标」：应为每个 Goal 附上测试、指标或人工检查等验收方式。"
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有任何 Goal，因此不存在带数字、单位或阈值的量化目标。",
+      "missing": "缺少「2.1 目标」中的量化目标：至少一个 Goal 应有数字、单位或明确阈值，如 P95 延迟或覆盖率。"
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "全文没有 Goal 列表，数量为 0，不在 3–6 个范围内。",
+      "missing": "缺少「2.1 目标」的 Goal 列表：应给出 3–6 个 Goal，并按架构/性能/可靠性等分类。"
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有非目标章节，不存在任何带「本次不做」或「Deferred to Phase 2」标注的条目。",
+      "missing": "缺少「2.2 非目标」：每条 Non-Goal 都应标注「本次不做」或「Deferred to Phase 2」。"
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有非目标条目，无法判断其是否可追溯到痛点或边界。",
+      "missing": "缺少「2.2 非目标」：应逐条说明该非目标对应的痛点或架构边界。"
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 3 章，正文无拓扑图，也无模块职责或数据流描述。",
+      "missing": "缺少「3. 架构设计与核心方案」：应给出拓扑图，或等价的模块职责与数据流描述。"
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有总体架构章节，既无拓扑图也无模块职责说明。",
+      "missing": "缺少「3.1 总体架构」：应提供可读的拓扑图，并为每个模块写一句职责。"
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "第 3 章不存在，文档未说明任何新增、改造或保持不变的部分。",
+      "missing": "缺少第 3 章的新增/改造/不变清单：应分别列出本次新增、改造与保持不变的部分。"
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有关键选型章节，没有任何选型理由，也未指向第 7 章。",
+      "missing": "缺少「3.4 关键选型与约束」：应说明关键选型理由，并把详细对比指向第 7 章。"
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 4 章，未提供任何数据模型、字段表或接口契约。",
+      "missing": "缺少「4. 详细设计」：至少应有一份数据模型（字段表/schema）或接口契约（请求/响应或方法签名）。"
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有数据模型章节，不存在带类型、必填和校验的字段定义。",
+      "missing": "缺少「4.3 数据模型与契约」：应给出字段表或 schema，标明类型、必填与校验规则。"
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有接口章节，未定义请求、响应、状态码或方法签名。",
+      "missing": "缺少「4.4 接口与协议」：应定义每个接口的请求/响应结构、状态码或方法签名。"
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 4 章，也就不存在任何核心流程的时序图或分步说明。",
+      "missing": "缺少「4.5 核心流程与时序」：应给出时序图或编号分步说明，并覆盖异常路径。"
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有异常处理章节，未定义任何错误码、触发场景或处理策略。",
+      "missing": "缺少「4.6 异常处理与错误码」：应为每个错误码写明触发场景与处理策略。"
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 5 章，没有任何 NFR，更无数字、单位或验收方式。",
+      "missing": "缺少「5. 非功能性需求」：每条 NFR 都应有数字、单位或明确验收方式，如 P95、QPS、SLA。"
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "第 5 章缺失，性能、可靠性、可观测性、安全四类均未覆盖，也未说明不适用。",
+      "missing": "缺少「5. 非功能性需求」：应覆盖性能、可靠性、可观测性、安全，或逐类说明不适用及理由。"
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有任何指标，因此不存在已实测或未实测的标注，也无 [estimated] 或「未实现」标记。",
+      "missing": "缺少「5. 非功能性需求」：应给出指标并明确标注 [estimated] 或「未实现」，避免把未实测值写成已达成。"
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有发布与灰度章节，未写发布方式，也没有灰度节奏。",
+      "missing": "缺少「6.1 发布与灰度」：应写明蓝绿/金丝雀/Feature Flag 等发布策略及观察期与放量节奏。"
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有迁移与兼容性章节，既无迁移方案，也未说明无需迁移。",
+      "missing": "缺少「6.2 数据迁移与兼容性」：应给出 Backfill/双写/影子表等方案及兼容策略，或明确说明无需迁移及理由。"
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有上线验证章节，无冒烟步骤，也无观察指标。",
+      "missing": "缺少「6.3 上线验证与冒烟」：应给出可执行的冒烟清单与对应的观察指标。"
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有回滚与熔断章节，不存在任何可观测的回滚触发数字。",
+      "missing": "缺少「6.4 回滚与熔断」：应把回滚触发条件写成可观测数字，如错误率、延迟或资源阈值。"
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有回滚与熔断章节，文档未给出任何回滚步骤或命令。",
+      "missing": "缺少「6.4 回滚与熔断」：应给出可执行的编号回滚步骤或命令，而不只是「可以回滚」。"
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 7 章，未描述 Status Quo，也未给出其成本或风险。",
+      "missing": "缺少「7. 替代方案与权衡」：应描述 Status Quo 及其成本、风险或触发阈值。"
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "第 7 章缺失，没有任何被否决方案，也没有淘汰原因。",
+      "missing": "缺少「7. 替代方案与权衡」：至少应有一个被否决方案的思路、优点及对应当前约束的淘汰原因。"
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有第 7 章，不存在任何权衡矩阵。",
+      "missing": "缺少「7. 替代方案与权衡」：应给出与当前约束维度对应的权衡矩阵。"
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "第 7 章缺失，且全文没有 Goals 或架构选型可供对照，结论一致性无从谈起。",
+      "missing": "缺少「7. 替代方案与权衡」的结论：应明确所选方案，并使其与第 2 章 Goals、第 3 章架构选型一致。"
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有 Goals，也没有第 3/4/5 章，未回应任何目标。",
+      "missing": "缺少 Goals 与后续设计章节：应为每个 Goal 在第 3/4/5 章找到对应设计与验收。"
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档既无 NFR 也无架构/选型，无法建立二者的一致性对应。",
+      "missing": "缺少第 3、5 章：应写出 NFR，并在架构与选型中说明如何满足这些指标。"
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档既无发布/灰度策略也无回滚方案，二者无法对应。",
+      "missing": "缺少第 6 章发布与回滚内容：回滚步骤应与发布/灰度策略相互对应。"
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "这份 spec 依赖同目录树上的一份已批准架构文档，因此应当通过检查。"
+        }
+      ],
+      "rationale": "全文没有把 无、...、待补充、TBD 当作实质回答，正文仅有这一句完整陈述。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "这份 spec 依赖同目录树上的一份已批准架构文档，因此应当通过检查。"
+        }
+      ],
+      "rationale": "全文没有代码块、测试日志或偶发报错，只有一段依赖说明文字。",
+      "missing": ""
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "这份 spec 依赖同目录树上的一份已批准架构文档，因此应当通过检查。"
+        }
+      ],
+      "rationale": "not applicable: 文档没有提出任何性能、资源或覆盖率数字，因此没有需要标注出处或 [estimated] 的关键数字。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "docs/architecture/example-architecture.md"
+        },
+        {
+          "section": "全文",
+          "quote": "这份 spec 依赖同目录树上的一份已批准架构文档，因此应当通过检查。"
+        }
+      ],
+      "rationale": "depends_on 指向的 docs/architecture/example-architecture.md 实际存在且 status 为 Approved；全文没有 SPEC 引用或 M<N>。",
+      "missing": ""
+    }
+  ]
+}
