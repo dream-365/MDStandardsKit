@@ -336,6 +336,24 @@ func TestPolicyFromHeadDowngradesOnDirtyBaseline(t *testing.T) {
 	}
 }
 
+func TestQualityReportUnderDocsQualityIsNotGoverned(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "docs/specs/001.md", doc("Approved", "docs/architecture/003.md"))
+	writeFile(t, root, "docs/architecture/003.md", doc("Published"))
+	// A Markdown report without frontmatter under docs/quality/ must not be
+	// extracted as a governed document. Placing it under docs/specs/ would.
+	writeFile(t, root, "docs/quality/001/quality-report.md", "# Spec Quality Report\n\nNo frontmatter.\n")
+
+	code, out, errs := runCLI(t, root, "--format", "json", "--phase", "1")
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0; stderr=%s out=%s", code, errs, out)
+	}
+	r := decodeReport(t, out)
+	if len(r.ExtractErrors) != 0 {
+		t.Fatalf("quality report was extracted: %+v", r.ExtractErrors)
+	}
+}
+
 func gitRun(t *testing.T, root string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", root}, args...)...)
