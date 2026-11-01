@@ -865,11 +865,11 @@ Sequential implementation, no parallelization opportunity. One skill package plu
   - Surfaced by: Test gaps 1–6.
   - Files: `tools/qualitycheck/*_test.go`, `testdata/`.
   - Verify: `go test ./...` and `make check`.
-- [ ] **T6 (P2, human: ~1h / CC: ~15min)** — real specs — Run `SPEC-001-mdstandards/spec.md`, `docs/designs/doc-writing-skill.md`, and a legacy spec; record scores and disagreements.
+- [x] **T6 (P2, human: ~1h / CC: ~15min)** — real specs — Run `SPEC-001-mdstandards/spec.md`, `docs/designs/doc-writing-skill.md`, and a legacy spec; record scores and disagreements.
   - Surfaced by: Success Criteria.
   - Files: `docs/quality/SPEC-*/`.
   - Verify: reports exist and audits are clean.
-  - Smoke: zero-level findings on `SPEC-001-mdstandards/spec.md`, `docs/designs/doc-writing-skill.md`, and `testdata/example-repo/docs/specs/example-spec.md` all exit 0 and write reports under `docs/quality/`; the real reviewer pass remains.
+  - Real: independent reviewer passes completed 2026-11-02: SPEC-001 93.0/90.7, doc-writing-skill 15.0, example-spec 12.0; all audits exit 0. The `.smoke` reports remain as byte-reproducible pipeline tests.
 
 ## Unresolved decisions
 

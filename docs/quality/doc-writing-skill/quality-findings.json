@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "target": "docs/designs/doc-writing-skill.md",
+  "target_sha256": "38be1d04747b3edfe78415a0a7ce69898753fa0bd6bdd423543eab97756233ce",
+  "reviewer": {
+    "role": "independent",
+    "model": "claude",
+    "session_id": "reviewer-design-20261102",
+    "started_at": "2026-11-01T22:27:29Z"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「1.1 系统现状」章节；现状只散落在 Problem Statement 与 What already exists，未集中写模块职责、核心流程与当前技术栈。",
+      "missing": "缺少「1.1 系统现状」：应集中说明现有规范/工具链的模块职责、核心调用链与数据流，以及 Go、mdstandards 等技术栈。"
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「1.2 核心技术痛点」章节；Problem Statement 只描述了产出不一致和评审顺序，没有从触发到后果的分步失败链。",
+      "missing": "缺少「1.2 核心技术痛点」：应给出编号的失败链，从 Agent 读取规范不稳定、关键问题未回答到产出解决错问题的方案。"
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「1.3 重构/设计动机」章节；虽然 Problem Statement 说明现有规范不稳定，但没有独立的触发点与为什么现在做的时间理由。",
+      "missing": "缺少「1.3 重构/设计动机」：应写出具体触发事件或时间点，并解释为什么现在迁移规范而不是以后。"
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「1.4 非目标」章节；非目标散落在 NOT in scope 与 Constraints，且未说明不做这些项的后果。",
+      "missing": "缺少「1.4 非目标」：应集中列出本次不做的范围，并说明不做会带来的后果。"
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「1.2 核心技术痛点」章节；用户引述只出现在 Problem Statement，未作为痛点章节中与失败链对应的证据。",
+      "missing": "缺少「1.2 核心技术痛点」中的可核实证据：应把事故、度量或带出处的引述放入痛点章节，并与失败链逐步对应。"
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「2.1 目标」章节，也没有逐条 Goal；Success Criteria 是验收项，不是带验收方式的 Goal 清单。",
+      "missing": "缺少「2.1 目标」：应列出每个 Goal，并为每个 Goal 附上测试、指标或人工检查等验收方式。"
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「2.1 目标」章节，因此不存在带数字、单位或明确阈值的 Goal。",
+      "missing": "缺少「2.1 目标」中的量化 Goal：至少一个 Goal 应有数字、单位或明确阈值，如延迟、行数或覆盖率。"
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有 Goals 列表，无法按 3–6 个计数。",
+      "missing": "缺少「2.1 目标」的 Goal 列表：应给出 3–6 个 Goal，并按架构、性能、可靠性等分类。"
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「2.2 非目标」章节；NOT in scope 的条目虽有 deferred/rejected 标注，但未组织成该章节内逐条标注的 Non-Goal 列表。",
+      "missing": "缺少「2.2 非目标」：应逐条列出 Non-Goal，并标注「本次不做」「Deferred to Phase 2」或「永远不做」。"
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「2.2 非目标」章节，无法在该章节内逐条追溯非目标与痛点或边界的对应关系。",
+      "missing": "缺少「2.2 非目标」：应逐条说明该非目标对应的痛点或架构边界。"
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「第 3 章 架构设计与核心方案」；目录结构与 Flow diagram 散落在推荐方案和 Eng Review，未构成该章拓扑或数据流。",
+      "missing": "缺少「3. 架构设计与核心方案」：应给出技能、检查器与数据流的拓扑图或等价模块描述。"
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「3.1 总体架构」章节；目录树只列文件，Flow diagram 只列阶段，未给每个模块一句职责。",
+      "missing": "缺少「3.1 总体架构」：应提供拓扑图，并为每个模块写一句职责。"
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 3 章，未在该章集中写清新增、改造与保持不变的部分。",
+      "missing": "缺少第 3 章的新增/改造/不变清单：应分别列出新增文件、改造文件和保持不变的部分。"
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「3.4 关键选型与约束」章节；Approaches Considered 有否决理由，但不在该章节，也未把详细对比指向第 7 章。",
+      "missing": "缺少「3.4 关键选型与约束」：应写关键选型理由，并把详细对比指向第 7 章。"
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「第 4 章 详细设计」；routes.json 契约与 check schema 在推荐方案和检查器章节，未作为详细设计契约呈现。",
+      "missing": "缺少「4. 详细设计」：应至少给出数据模型或接口契约，如 routes.json、check JSON 的字段与语义。"
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「4.3 数据模型与契约」章节；routes.json 只有示例字段，没有字段类型、必填与校验规则。",
+      "missing": "缺少「4.3 数据模型与契约」：应给出字段表或 schema，包含类型、必填与校验。"
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「4.4 接口与协议」章节；doccheck CLI 模式与退出码散落在检查器章节，未在接口章节整理请求、响应与状态码。",
+      "missing": "缺少「4.4 接口与协议」：应集中给出接口签名、请求/响应结构或状态码。"
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「4.5 核心流程与时序」章节；路由算法与 Flow diagram 分散，未在该章节给出含异常路径的时序或分步说明。",
+      "missing": "缺少「4.5 核心流程与时序」：应给出复杂流程的时序图或编号步骤，并覆盖异常路径。"
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「4.6 异常处理与错误码」章节；exit 0/1/2 在外部闸门章节有触发与处理，但未作为该章节的错误码表。",
+      "missing": "缺少「4.6 异常处理与错误码」：应集中列出每个错误码或退出码的触发场景与处理策略。"
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档没有「第 5 章 非功能性需求」；只有 Performance review 中的 <10s 扫描预算，未形成逐条 NFR。",
+      "missing": "缺少「5. 非功能性需求」：应逐条给出性能、可靠性、可观测性、安全等 NFR 的数字、单位或验收方式。"
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 5 章；Performance review 只覆盖性能，未覆盖可靠性、可观测性与安全，也未说明不适用。",
+      "missing": "缺少「5. 非功能性需求」：应覆盖性能、可靠性、可观测性、安全，或明确说明哪类不适用。"
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 5 章；<10s/1000 docs 的扫描预算是未实测数字，且未标 [estimated] 或 未实现。",
+      "missing": "缺少「5. 非功能性需求」的诚实标注：未实测指标应标 [estimated]，未实现项应标 未实现。"
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「6.1 发布与灰度」章节；分发与 release workflow 描述了发布方式，但没有灰度节奏。",
+      "missing": "缺少「6.1 发布与灰度」：应给出发布策略与灰度、观察节奏。"
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「6.2 数据迁移与兼容性」章节；迁移步骤在分发与迁移章节，未作为该节方案。",
+      "missing": "缺少「6.2 数据迁移与兼容性」：应给出迁移/兼容方案，或明确说明无需迁移及理由。"
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「6.3 上线验证与冒烟」章节；CI 检查步骤散落，未形成冒烟清单与观察指标。",
+      "missing": "缺少「6.3 上线验证与冒烟」：应给出冒烟清单与观察指标。"
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「6.4 回滚与熔断」章节；文档只要求生成的 Spec 写回滚触发条件，没有本设计自身的可观测回滚阈值。",
+      "missing": "缺少「6.4 回滚与熔断」：应给出可观测的回滚触发数字，如错误率、延迟或资源阈值。"
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「6.4 回滚与熔断」章节；没有发布或分发失败时的可执行回滚步骤，只有 Spec 状态回退规则。",
+      "missing": "缺少「6.4 回滚与熔断」：应给出编号或命令形式的可执行回滚步骤，不能只写「可以回滚」。"
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有「第 7 章 替代方案与权衡」；Problem Statement 描述了现状与代价，但未把 Status Quo 作为替代方案列出。",
+      "missing": "缺少「7. 替代方案与权衡」中的 Status Quo：应列出维持现状的成本与风险。"
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 7 章；Approach A/C 有否决理由，但不在该章节，无法按该节要求核对淘汰原因与约束的对应。",
+      "missing": "缺少「7. 替代方案与权衡」：应至少给出一个被否决方案，并说明淘汰原因如何对应当前约束。"
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 7 章，也没有与约束对应的权衡矩阵；Approach A 只散落 Effort/Risk 两项。",
+      "missing": "缺少「7. 替代方案与权衡」的权衡矩阵：应给出与约束对应的维度矩阵。"
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "没有第 7 章；推荐方案 B 与后续 Eng Review 的 Spec-only v1 范围相互矛盾，无法形成一致的结论。",
+      "missing": "缺少「7. 替代方案与权衡」：应给出与 Goals、架构选型一致的结论，并解决 B 与 Spec-only v1 的冲突。"
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "Success Criteria",
+          "quote": "- 生成一份真实的里程碑纪要，通过 `checks/milestone.json`：五章齐全、决策带理由、In/Out Scope 成对、Backlog 表有 Issue 列且非空、DoD 可观测。In Scope 与 Backlog 行的逐项对应由评审确认。"
+        },
+        {
+          "section": "NOT in scope",
+          "quote": "- Milestone route, `routes.json`, project profile, and five-mode `tools/doccheck`: deferred to v2, because the milestone corpus is not mapped and the router has no deterministic executor (S4, S5)."
+        }
+      ],
+      "rationale": "Success Criteria 中的里程碑与 router/doccheck 验收项在后续章节没有对应交付，且被 NOT in scope 延后；仅有部分验收项能追溯到设计。",
+      "missing": ""
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4. Performance review",
+          "quote": "One full `mdstandards` scan per generated spec. At 1000 docs the NFR budget is <10s per scan; the Spec-only flow runs phase 0 optionally and phase 1 once."
+        },
+        {
+          "section": "Constraints",
+          "quote": "- 不引入新的运行时依赖；检查器用 Go 编写，复用已有工具链。"
+        }
+      ],
+      "rationale": "性能预算按每次生成一次 mdstandards 扫描计算，与复用 Go 工具链、不新增运行时依赖的选型一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "文档有 Distribution Plan 与 release workflow 的分发安排，但没有任何发布回滚步骤或触发条件，二者无法对应。",
+      "missing": "缺少与发布策略配套的回滚方案：应说明发布失败或安装后发现问题时如何撤回、回退，并让回滚步骤对应 release 步骤。"
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "检查器 tools/doccheck",
+          "quote": "5. `doccheck -placeholders <path>...`：检查模板与生成文档里的 `{{...}}`、整行 `<...>`、整行 `...` 残留。"
+        }
+      ],
+      "rationale": "全文没有把 无、待补充、TBD 当作实质回答；`...` 和 `<...>` 只作为占位符语法出现，并被列为残留检查对象。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "routes.json 契约",
+          "quote": "      \"metadata\": \"yaml_frontmatter\""
+        },
+        {
+          "section": "检查器 tools/doccheck",
+          "quote": "{\"items\":[{\"id\":\"pain_evidence\",\"status\":\"pass|fail\",\"locator\":\"1.2\",\"expected\":\"...\",\"actual\":\"...\"}],\"summary\":{\"pass\":0,\"fail\":1,\"advisory\":0},\"exit_code\":1}"
+        }
+      ],
+      "rationale": "代码块都是目录树、JSON/YAML 契约与检查器输出 schema，没有实现代码、测试日志或偶发报错堆砌。",
+      "missing": ""
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "Reality rows",
+          "quote": "REALITY: numbers pass 820 guide lines measured with `wc -l`; 14 files counted; 2 components counted; 23 mapping rows counted `docs/designs/doc-writing-skill.md:17`"
+        },
+        {
+          "section": "4. Performance review",
+          "quote": "At 1000 docs the NFR budget is <10s per scan"
+        }
+      ],
+      "rationale": "820 行、23 条映射等数字在 Reality rows 标了测量方式，但 1000 docs 下 <10s 的扫描预算是未实测数字，未标 [estimated]。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "Reality rows",
+          "quote": "| P7 | framely has no policy bundle | `ls /Users/alang/Workspace/framely/policy` (absent) | verified |"
+        },
+        {
+          "section": "Spec 模块（references/spec.md）",
+          "quote": "- `depends_on` 只写真实存在的受管文档；写入前确认目标文件存在，并且状态可依赖。"
+        }
+      ],
+      "rationale": "引用的 main.go、policy 路径由 Reality rows 逐条核实；depends_on 规则要求只写真实存在且可依赖的文档，全文没有具体 SPEC 编号或捏造的 M<N> 引用。",
+      "missing": ""
+    }
+  ]
+}
