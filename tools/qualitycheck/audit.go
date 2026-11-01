@@ -123,6 +123,24 @@ type AuditResult struct {
 	Notes         []string
 }
 
+func loadFindings(path string) (Findings, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return Findings{}, err
+	}
+	var f Findings
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&f); err != nil {
+		return Findings{}, fmt.Errorf("invalid findings JSON: %w", err)
+	}
+	var trailing any
+	if err := dec.Decode(&trailing); err != io.EOF {
+		return Findings{}, fmt.Errorf("invalid findings JSON: trailing data after the object")
+	}
+	return f, nil
+}
+
 func LoadRubric(path string) (Rubric, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -232,19 +250,9 @@ func Audit(rubricPath, findingsPath, docPath, writerSession string) (AuditResult
 	if err != nil {
 		return AuditResult{}, err
 	}
-	findingsBytes, err := os.ReadFile(findingsPath)
+	f, err := loadFindings(findingsPath)
 	if err != nil {
 		return AuditResult{}, err
-	}
-	var f Findings
-	dec := json.NewDecoder(bytes.NewReader(findingsBytes))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&f); err != nil {
-		return AuditResult{}, fmt.Errorf("invalid findings JSON: %w", err)
-	}
-	var trailing any
-	if err := dec.Decode(&trailing); err != io.EOF {
-		return AuditResult{}, fmt.Errorf("invalid findings JSON: trailing data after the object")
 	}
 
 	res := AuditResult{
@@ -655,6 +663,167 @@ func normalizeForMatch(s string) string {
 		}
 	}
 	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+type CalibrationDisagreement struct {
+	ID        string
+	Reference int
+	Candidate int
+}
+
+type CalibrationDimension struct {
+	ID            string
+	Name          string
+	Compared      int
+	Exact         int
+	Agreement     float64
+	WeightedKappa float64
+}
+
+type CalibrationResult struct {
+	Reference         string
+	Candidate         string
+	Compared          int
+	Exact             int
+	Agreement         float64
+	WeightedKappa     float64
+	CoreCompared      int
+	CoreExact         int
+	CoreAgreement     float64
+	CoreWeightedKappa float64
+	Confusion         [3][3]int
+	Dimensions        []CalibrationDimension
+	Disagreements     []CalibrationDisagreement
+	StatusMismatches  []string
+}
+
+// Calibrate compares two independent reviewer passes. It measures agreement,
+// not truth: the reference is another reviewer, not a human gold standard.
+func Calibrate(rubricPath, referencePath, candidatePath string) (CalibrationResult, error) {
+	r, err := LoadRubric(rubricPath)
+	if err != nil {
+		return CalibrationResult{}, err
+	}
+	if err := ValidateRubric(r); err != nil {
+		return CalibrationResult{}, fmt.Errorf("rubric invalid: %w", err)
+	}
+	ref, err := loadFindings(referencePath)
+	if err != nil {
+		return CalibrationResult{}, err
+	}
+	cand, err := loadFindings(candidatePath)
+	if err != nil {
+		return CalibrationResult{}, err
+	}
+	if ref.RubricVersion != r.Version || cand.RubricVersion != r.Version {
+		return CalibrationResult{}, fmt.Errorf("findings rubric_version does not match %s", r.Version)
+	}
+	if filepath.Clean(ref.Target) != filepath.Clean(cand.Target) {
+		return CalibrationResult{}, fmt.Errorf("reference and candidate targets differ")
+	}
+	refBy := map[string]ItemFinding{}
+	for _, it := range ref.Items {
+		refBy[it.ID] = it
+	}
+	candBy := map[string]ItemFinding{}
+	for _, it := range cand.Items {
+		candBy[it.ID] = it
+	}
+
+	res := CalibrationResult{Reference: referencePath, Candidate: candidatePath}
+	dimConf := map[string]*[3][3]int{}
+	dimCompared := map[string]int{}
+	var coreConf [3][3]int
+	for _, d := range r.Dimensions {
+		dimConf[d.ID] = &[3][3]int{}
+		for _, item := range d.Items {
+			rf, ok1 := refBy[item.ID]
+			cf, ok2 := candBy[item.ID]
+			if !ok1 || !ok2 {
+				continue
+			}
+			if rf.Status == "na" || cf.Status == "na" {
+				if rf.Status != cf.Status {
+					res.StatusMismatches = append(res.StatusMismatches, item.ID)
+				}
+				continue
+			}
+			if rf.Status != "scored" || cf.Status != "scored" {
+				continue
+			}
+			if rf.Level < 0 || rf.Level > 2 || cf.Level < 0 || cf.Level > 2 {
+				continue
+			}
+			res.Confusion[rf.Level][cf.Level]++
+			dimConf[d.ID][rf.Level][cf.Level]++
+			res.Compared++
+			dimCompared[d.ID]++
+			if item.Tier == "core" {
+				coreConf[rf.Level][cf.Level]++
+				res.CoreCompared++
+			}
+			if rf.Level == cf.Level {
+				res.Exact++
+				if item.Tier == "core" {
+					res.CoreExact++
+				}
+			} else {
+				res.Disagreements = append(res.Disagreements, CalibrationDisagreement{ID: item.ID, Reference: rf.Level, Candidate: cf.Level})
+			}
+		}
+	}
+	if res.Compared == 0 {
+		return res, nil
+	}
+	res.Agreement = 100 * float64(res.Exact) / float64(res.Compared)
+	res.WeightedKappa = weightedKappa(res.Confusion, res.Compared)
+	if res.CoreCompared > 0 {
+		res.CoreAgreement = 100 * float64(res.CoreExact) / float64(res.CoreCompared)
+		res.CoreWeightedKappa = weightedKappa(coreConf, res.CoreCompared)
+	}
+	for _, d := range r.Dimensions {
+		if dimCompared[d.ID] == 0 {
+			continue
+		}
+		cd := CalibrationDimension{ID: d.ID, Name: d.Name, Compared: dimCompared[d.ID]}
+		for i := 0; i < 3; i++ {
+			cd.Exact += dimConf[d.ID][i][i]
+		}
+		cd.Agreement = 100 * float64(cd.Exact) / float64(cd.Compared)
+		cd.WeightedKappa = weightedKappa(*dimConf[d.ID], cd.Compared)
+		res.Dimensions = append(res.Dimensions, cd)
+	}
+	return res, nil
+}
+
+func weightedKappa(conf [3][3]int, n int) float64 {
+	if n == 0 {
+		return 0
+	}
+	var row, col [3]float64
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			row[i] += float64(conf[i][j])
+			col[j] += float64(conf[i][j])
+		}
+	}
+	var observed, expected float64
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			w := 1 - float64((i-j)*(i-j))/4
+			observed += float64(conf[i][j]) * w
+			expected += row[i] * col[j] * w
+		}
+	}
+	observed /= float64(n)
+	expected /= float64(n * n)
+	if 1-expected == 0 {
+		if observed == 1 {
+			return 1
+		}
+		return 0
+	}
+	return (observed - expected) / (1 - expected)
 }
 
 func sha256Hex(b []byte) string {

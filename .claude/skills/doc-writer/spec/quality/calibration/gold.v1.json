@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "entries": [
+    {
+      "target": "docs/specs/SPEC-001-mdstandards/spec.md",
+      "reference_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.json",
+      "candidate_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.second.json",
+      "human_levels": {},
+      "status": "candidate",
+      "note": "Human adjudication pending. Two independent reviewer passes exist for inter-rater agreement."
+    },
+    {
+      "target": "docs/designs/doc-writing-skill.md",
+      "reference_findings": "docs/quality/doc-writing-skill/quality-findings.json",
+      "candidate_findings": null,
+      "human_levels": {},
+      "status": "candidate",
+      "note": "Not a template-conformant spec; retained as a low-score anchor."
+    },
+    {
+      "target": "testdata/example-repo/docs/specs/example-spec.md",
+      "reference_findings": "docs/quality/example-spec/quality-findings.json",
+      "candidate_findings": null,
+      "human_levels": {},
+      "status": "candidate",
+      "note": "Legacy example; retained as a low-score anchor."
+    }
+  ]
+}
