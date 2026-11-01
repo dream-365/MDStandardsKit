@@ -1,0 +1,8 @@
+{
+  "standard": {
+    "standard_version": "1",
+    "governed_globs": ["docs/specs/**/*.md", "docs/architecture/**/*.md", "adr/**/*.md"],
+    "dependable_statuses": ["Approved", "Published"],
+    "identity": "repo_relative_path"
+  }
+}
