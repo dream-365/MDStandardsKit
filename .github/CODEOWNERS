@@ -1,0 +1,4 @@
+# 策略与被接受的违规基线需要人工评审（设计决策 D11）。
+# CODEOWNERS 只接受 GitHub 用户或团队的 handle，不能用显示名。
+/policy/        @dream-365
+/baseline.json  @dream-365
