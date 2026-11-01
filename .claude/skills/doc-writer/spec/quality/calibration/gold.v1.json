@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "entries": [
+    {
+      "target": "docs/specs/SPEC-001-mdstandards/spec.md",
+      "reference_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.json",
+      "candidate_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.second.json",
+      "human_levels": {
+        "bg.current_state": 1,
+        "bg.failure_chain": 2,
+        "bg.trigger": 2,
+        "bg.non_goals": 2,
+        "bg.pain_evidence": 1,
+        "goal.verifiable": 2,
+        "goal.quantified": 2,
+        "goal.count": 1,
+        "nongoal.labeled": 2,
+        "nongoal.not_dumping_ground": 2,
+        "arch.solution_shape": 2,
+        "arch.topology": 1,
+        "arch.change_set": 2,
+        "arch.rationale": 1,
+        "design.contract": 2,
+        "design.data_model": 2,
+        "design.interface": 2,
+        "design.sequence": 1,
+        "design.errors": 2,
+        "nfr.measurable": 2,
+        "nfr.coverage": 2,
+        "nfr.honesty": 2,
+        "rollout.release": 2,
+        "rollout.migration": 2,
+        "rollout.smoke": 2,
+        "rollout.rollback_trigger": 2,
+        "rollout.rollback_steps": 2,
+        "alts.status_quo": 2,
+        "alts.rejected": 2,
+        "alts.matrix": 2,
+        "alts.consistency": 2,
+        "x.goals_trace": 2,
+        "x.nfr_arch": 2,
+        "x.rollback_release": 2,
+        "x.no_placeholders": 2,
+        "x.no_code": 2,
+        "x.numbers_sourced": 2,
+        "x.no_fabricated_refs": 2
+      },
+      "status": "gold",
+      "note": "Human adjudication 2026-11-02: bg.current_state=1, arch.topology=1, design.sequence=1 (strict). Agreed levels adopted for the other items.",
+      "human_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.human.json",
+      "human_reviewed_at": "2026-11-02"
+    },
+    {
+      "target": "docs/designs/doc-writing-skill.md",
+      "reference_findings": "docs/quality/doc-writing-skill/quality-findings.json",
+      "candidate_findings": null,
+      "human_levels": {},
+      "status": "candidate",
+      "note": "Not a template-conformant spec; retained as a low-score anchor."
+    },
+    {
+      "target": "testdata/example-repo/docs/specs/example-spec.md",
+      "reference_findings": "docs/quality/example-spec/quality-findings.json",
+      "candidate_findings": null,
+      "human_levels": {},
+      "status": "candidate",
+      "note": "Legacy example; retained as a low-score anchor."
+    }
+  ]
+}

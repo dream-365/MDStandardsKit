@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.0.0",
+  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "target": "docs/specs/SPEC-001-mdstandards/spec.md",
+  "target_sha256": "db8c9985081365e918a49876a7314c3a07f072cdcfc19415156721be0b86804f",
+  "reviewer": {
+    "role": "independent",
+    "model": "smoke",
+    "session_id": "reviewer-smoke",
+    "started_at": "2026-11-01T00:00:00Z"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 0,
+      "evidence": [],
+      "rationale": "smoke run; not a content verdict",
+      "missing": "not reviewed in this smoke run"
+    }
+  ]
+}

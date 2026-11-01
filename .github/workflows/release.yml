@@ -35,3 +35,22 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: mdstandards-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  package:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: package doc-writer skill
+        run: |
+          tar -czf doc-writer-skill.tar.gz \
+            .claude/skills/doc-writer \
+            tools/qualitycheck \
+            policy \
+            go.mod \
+            go.sum
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: doc-writer-skill.tar.gz
