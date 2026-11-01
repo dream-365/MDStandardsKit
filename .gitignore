@@ -1,3 +1,5 @@
 /mdstandards
+/qualitycheck
 *.test
 findings.json
+docs/designs/*.review.*/
