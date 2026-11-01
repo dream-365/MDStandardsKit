@@ -159,7 +159,7 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 | 语料里零条依赖边 | 覆盖断言 → exit 2（phase ≥ 1） | 否 |
 | 策略包编译失败 / 标准缺失 | exit 2 | 否 |
 | 单个文件解析失败 | 计入 `extract_errors`，phase ≥ 1 时 exit 2 | 否 |
-| Agent 修改 `policy/` 或 `baseline.json` | `-policy-from-head` 从 HEAD 读策略；脏工作区降级为只报告 | 否（有警告） |
+| Agent 修改 `policy/` 或 `baseline.json` | `-policy-from-head` 从 HEAD 读策略；策略或 baseline 有未提交改动时降级为只报告 | 否（有警告） |
 | Agent hook 根本没装 | 无检测手段 | **是，已知关键缺口** |
 
 ## 6. 安全与信任边界
@@ -167,9 +167,9 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 闸门要拦的对象和闸门本身在同一个工作区里。因此：
 
 - 二进制只内嵌 Rego **引擎**，策略包以仓库内的 bundle 为准，避免两套权威来源。
-- `-policy-from-head` 从已提交的 `HEAD` 读取策略；工作区策略有未提交改动时
-  打印警告并降级为只报告，不让 Agent 改完规则立刻重跑。
-- `policy/`、`standard.json`、`baseline.json` 应受 CODEOWNERS 保护（**尚未在本仓库落地**）。
+- `-policy-from-head` 从已提交的 `HEAD` 读取策略；工作区策略或 `baseline.json` 有未提交改动时
+  打印警告并降级为只报告，不让 Agent 改完规则或基线立刻重跑。
+- `policy/` 与 `baseline.json` 已由 `.github/CODEOWNERS` 保护。
 - frontmatter 是 Agent 写出的不可信输入：单文件上限 1 MiB，疑似 YAML 别名展开
   （`*` 超过 100 个或 `<<` 超过 10 个）直接拒绝，策略求值 10 秒超时。
 - 已知残留风险：`status: Approved` 由同一条写入路径设置，策略无法区分人和 Agent。
