@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mdstandards.local/doc-writer/quality/findings.schema.json",
+  "$id": "urn:mdstandards:doc-writer:quality:findings.schema:1",
   "title": "Spec quality findings",
   "type": "object",
   "additionalProperties": false,
