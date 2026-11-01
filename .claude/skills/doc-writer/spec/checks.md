@@ -5,7 +5,7 @@
 ## 元数据
 
 - [ ] frontmatter 有 `type: spec`、`status`、`owner`、`depends_on`、`updated_at`。
-- [ ] `depends_on` 的每个目标都真实存在，且状态是 `Approved`、`Implemented` 或 `Published`。
+- [ ] `depends_on` 的每个目标都真实存在，且状态是 `Approved` 或 `Published`。
 - [ ] 正文元数据表有标题、主笔、评审人、创建日期；缺一不可。
 - [ ] 标题符合 `[系统/模块名] [核心动作/变更内容] 技术方案`。
 
