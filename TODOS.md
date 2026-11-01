@@ -8,11 +8,11 @@
 
 **Why:** Needed before Stage 1/2 can gate on the score; v1 is report-only.
 
-**Context:** Deferred from the v1 scorecard (D1). The scaffold exists at `.claude/skills/doc-writer/spec/quality/calibration/gold.v1.json` with three candidate entries, and `qualitycheck -calibrate` computes inter-rater agreement and weighted kappa. Human adjudication and two more specs remain before any threshold.
+**Context:** Deferred from the v1 scorecard (D1). The scaffold exists at `.claude/skills/doc-writer/spec/quality/calibration/gold.v1.json`: SPEC-001 is gold with human adjudication (human-vs-first core kappa 1.000; human-vs-second core kappa 0.651), and two low-score anchors remain candidates. Four more human-scored specs and the blocking-threshold decision remain.
 
 **Effort:** M
 **Priority:** P2
-**Depends on:** Ready to continue: v1 shipped and real reviews exist.
+**Depends on:** Ready to continue: v1 shipped, real reviews and one human adjudication exist.
 
 ## Completed
 

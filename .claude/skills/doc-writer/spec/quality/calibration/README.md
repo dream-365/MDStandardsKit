@@ -23,7 +23,13 @@ The report gives exact agreement, quadratic weighted kappa, a 3×3 confusion mat
 
 ## Current result
 
-SPEC-001 inter-rater pair (2026-11-02): 38 compared, 92.1% exact, overall quadratic weighted kappa 0.623. Core items: 29 compared, 96.6% exact, weighted kappa 0.651. The three disagreements are `bg.current_state` (1 vs 2), `arch.topology` (2 vs 1), and `design.sequence` (2 vs 1); human adjudication is pending. Per-dimension kappa can read 0 at high exact agreement when a dimension has little level variance; read the exact agreement alongside it.
+SPEC-001 is now `gold`. Human adjudication on 2026-11-02 set the three disagreements to the strict reading: `bg.current_state=1`, `arch.topology=1`, `design.sequence=1`; the agreed levels were adopted for the other items.
+
+- Inter-rater (first vs second): 38 compared, 92.1% exact, overall quadratic weighted kappa 0.623; core 29 compared, 96.6% exact, weighted kappa 0.651.
+- Human vs first: 94.7% exact, weighted kappa 0.771; core 100% exact, weighted kappa 1.000.
+- Human vs second: 97.4% exact, weighted kappa 0.894; core 96.6% exact, weighted kappa 0.651.
+
+The other two entries remain `candidate`. Four more human-scored specs are needed to reach the five-spec promotion gate. Per-dimension kappa can read low at high exact agreement when a dimension has little level variance; read the exact agreement alongside it.
 
 ## Promotion criteria
 
