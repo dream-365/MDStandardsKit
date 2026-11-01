@@ -72,20 +72,26 @@ depends_on:
 ├── *_test.go
 ├── policy/                  Rego 规则与标准（唯一事实来源）
 ├── testdata/example-repo/   可运行的示例语料
+├── tools/qualitycheck/      Spec 内容质量评分卡审计器
 ├── docs/
 │   ├── architecture/        架构文档
+│   ├── designs/             设计记录
+│   ├── quality/             质量评分卡报告
 │   └── specs/               v1 规格
 ├── Makefile
 └── .github/workflows/       CI 与发布
 ```
 
-代码刻意保持单包：v1 只有几百行、没有第二个调用方，拆成 `cmd/` + `internal/`
+`mdstandards` 代码刻意保持单包：v1 只有几百行、没有第二个调用方，拆成 `cmd/` + `internal/`
 属于过早抽象（决策 D2）。
 
 ## 设计文档
 
 - [架构](docs/architecture/mdstandards-architecture.md)
 - [v1 规格](docs/specs/SPEC-001-mdstandards/spec.md)
+- [doc-writer 技能设计](docs/designs/doc-writing-skill.md)
+- [Spec 内容质量评分卡设计](docs/designs/spec-quality-scorecard.md)
+- [质量报告索引](docs/quality/README.md)
 
 ## 已知限制
 
