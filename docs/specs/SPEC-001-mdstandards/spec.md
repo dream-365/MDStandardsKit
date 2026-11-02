@@ -1,10 +1,10 @@
 ---
 type: spec
-status: In Review
+status: Implemented
 owner: alang
 depends_on:
   - docs/architecture/mdstandards-architecture.md
-updated_at: 2026-11-01
+updated_at: 2026-11-03
 ---
 
 # MDStandardsKit v1 元数据闸门 技术方案
@@ -13,7 +13,7 @@ updated_at: 2026-11-01
 | --- | --- |
 | 标题 | MDStandardsKit v1 元数据闸门 技术方案 |
 | 主笔 | alang |
-| 评审人 | 独立 agent（用户 alang 委托代审）；v1 无独立下游负责人 |
+| 评审人 | 独立 agent（用户 alang 委托代审）；2026-11-03 实现收口后独立质量复审；v1 无独立下游负责人 |
 | 创建日期 | 2026-10-30 |
 | 目标版本 | v1 |
 | 关联资源 | [架构](../../architecture/mdstandards-architecture.md) |
@@ -67,9 +67,9 @@ updated_at: 2026-11-01
 
 - **G1 引用存在**：每条 `depends_on` 的目标必须在受管语料中；缺失产出 `refs.missing_target`。验收：`TestMissingTargetBlocks`。
 - **G2 状态可依赖**：目标 `status` 必须逐字等于 `dependable_statuses` 中的某一项；缺失或大小写不符同样违规。验收：`TestNonDependableStatusBlocks`、`TestLowercaseStatusIsNotDependable`。
-- **G3 Fail-closed**：零受管文档在任一 phase 都退出 2；零解析文档与零依赖边在 phase ≥ 1 退出 2，策略降级不绕过这些覆盖断言；解析错误在 phase ≥ 1 且未触发策略降级时退出 2，触发降级时只报告并退出 0，不得静默通过。验收：`TestZeroGovernedDocumentsFailsClosed`、`TestZeroEdgesFailsClosed`、`TestExtractErrorFailsClosedInPhase1`（降级路径未覆盖）。
+- **G3 Fail-closed**：零受管文档在任一 phase 都退出 2；零解析文档与零依赖边在 phase ≥ 1 退出 2，降级不绕过这些覆盖断言；解析错误在 phase ≥ 1 且未触发降级时退出 2，触发降级时只报告并退出 0，不得静默通过。验收：`TestZeroGovernedDocumentsFailsClosed`、`TestZeroEdgesFailsClosed`、`TestExtractErrorFailsClosedInPhase1`、`TestDirtyPolicyWithExtractErrorIsReportOnly`、`TestDirtyPolicyWithZeroEdgesStillFailsClosed`。
 - **G4 分阶段**：phase 0 不因违规或解析错误阻断（工具级错误仍退出 2）；phase 1 对基线外的新违规退出 1；基线按 `(rule, document, target)` 精确匹配。验收：`TestPhase0NeverBlocks`、`TestBaselineSuppressesKnownViolation`、`TestBaselineDoesNotSuppressRenamedTarget`。
-- **G5 稳定输出**：JSON 含 `schema_version`、`findings`、`extract_errors`、`stats`；findings 按 `(rule, document, target)` 排序，字节稳定。验收：`TestJSONSchemaAndStats`（仅覆盖 schema/stats）；排序与字节稳定性无独立测试。
+- **G5 稳定输出**：JSON 含 `schema_version`、`findings`、`extract_errors`、`stats`；findings 按 `(rule, document, target)` 排序，字节稳定。验收：`TestJSONSchemaAndStats`、`TestJSONStatsCounts`、`TestSortFindingsOrder`、`TestJSONByteStableAcrossRuns`。
 
 ### 2.2 非目标
 
@@ -128,10 +128,10 @@ flowchart LR
 3. 抽取受管语料，得到 `documents`、`extract_errors` 与 `stats`。
 4. 执行覆盖断言：零受管文档、阻断阶段的零文档/零依赖边直接退出 2。
 5. Rego 对每条依赖边求值，产出 findings。
-6. 阻断阶段（`phase >= 1` 且未触发策略降级）按 baseline 过滤存量违规；phase 0 或策略降级时跳过 baseline 过滤，也不因 finding 或 extract_error 阻断，但覆盖断言与策略加载错误仍然生效。
+6. 阻断阶段（`phase >= 1` 且未触发降级）按 baseline 过滤存量违规；phase 0 或降级时跳过 baseline 过滤，也不因 finding 或 extract_error 阻断，但覆盖断言与策略加载错误仍然生效。
 7. 渲染报告并返回退出码。
 
-异常路径与正常路径共用同一份语料：解析失败不会被静默丢弃，而是进入 `extract_errors`；未触发策略降级时，阻断阶段因 extract_error 退出 2，降级时只报告并退出 0。
+异常路径与正常路径共用同一份语料：解析失败不会被静默丢弃，而是进入 `extract_errors`；未触发降级时，阻断阶段因 extract_error 退出 2，降级时只报告并退出 0。降级包括策略/基线未提交改动（REQ-051）与 phase 1 性能预算超限（NFR-002）。
 
 ### 3.4 关键选型与约束
 
@@ -152,6 +152,7 @@ flowchart LR
 | 依赖边 | 某文档 `depends_on` 中的一项；目标可以不在语料中，是否存在由规则判定 |
 | 可依赖状态 | `standard.dependable_statuses` 中的字面量，逐字匹配 |
 | 基线 | 已接受的存量违规三元组列表，只抑制精确匹配的 finding |
+| 降级 | 策略/基线有未提交改动（REQ-051），或 phase 1 且 ≤200 篇受管文档的单次门禁耗时超过 2 秒（NFR-002）；降级时跳过 baseline 过滤，不因 finding 或 extract_error 阻断，覆盖断言与策略加载错误仍退出 2 |
 
 ### 4.2 前置条件
 
@@ -248,7 +249,7 @@ sequenceDiagram
 
 | 码 | 含义 |
 |---|---|
-| 0 | 干净；或 phase 0 / 策略降级下不因 finding 或 extract_error 阻断的结果（覆盖断言仍需满足） |
+| 0 | 干净；或 phase 0 / 策略降级 / phase 1 性能预算降级下不因 finding 或 extract_error 阻断的结果（覆盖断言仍需满足） |
 | 1 | 阻断状态下存在未被基线抑制的 finding |
 | 2 | 工具或抽取错误：策略加载失败、版本不支持、零受管文档、`phase >= 1` 的零解析文档或零依赖边、未降级时的 extract_error |
 
@@ -283,9 +284,9 @@ sequenceDiagram
 #### 4.7.4 基线与阶段
 
 - **REQ-030** `phase = 0` 时，进程不因 finding 或 extract_error 阻断（退出 0），但 findings 与 extract_errors 仍应完整输出；零受管文档、策略加载失败等工具级错误仍按 REQ-020 与前置条件退出 2。
-- **REQ-031** 在未触发策略降级（REQ-051）的前提下，`phase >= 1` 且未指定 `-baseline` 时，任何 finding 都导致退出 1。
-- **REQ-032** 在阻断且未触发策略降级时，指定 `-baseline` 后，`(rule, document, target)` 与基线条目精确匹配的 finding 应被抑制。
-- **REQ-033** extract_error 不得被基线抑制；在未触发策略降级时，存在 extract_error 时 `phase >= 1` 退出 2；触发降级时只报告并退出 0。
+- **REQ-031** 在未触发降级（REQ-051 或 NFR-002）的前提下，`phase >= 1` 且未指定 `-baseline` 时，任何 finding 都导致退出 1。
+- **REQ-032** 在阻断且未触发降级时，指定 `-baseline` 后，`(rule, document, target)` 与基线条目精确匹配的 finding 应被抑制。
+- **REQ-033** extract_error 不得被基线抑制；在未触发降级时，存在 extract_error 时 `phase >= 1` 退出 2；触发降级时只报告并退出 0。
 - **REQ-034** 目标路径重命名后，旧基线条目失配，违规应重新暴露。
 
 #### 4.7.5 输出
@@ -305,13 +306,13 @@ sequenceDiagram
 
 ### 5.1 性能与资源
 
-- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（`[estimated]`，待实测）。
-- **NFR-002** Agent hook 场景下，≤200 篇文档的 p95 应 < 2 秒，超预算时降级为只警告（尚未实现）。
-- **NFR-003** 策略求值应有 10 秒上限，超时按工具错误退出 2。
+- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒。2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 38ms（`MDSTANDARDS_PERF=1 go test . -run TestNFR001ThousandDocsBudget -v`）。
+- **NFR-002** Agent hook（phase 1）场景下，≤200 篇受管匹配文档的单次门禁耗时（参数校验后到规则求值与排序完成）应 < 2 秒；单次超过 2 秒时打印警告并降级为只警告：跳过 baseline 过滤，不因 finding 或 extract_error 阻断；覆盖断言与策略加载错误仍退出 2。phase 2 不降级。p95 由固定 200 篇语料的 opt-in 基准测量，2026-11-03 实测 p95 9ms（20 次，Apple M2 / macOS 27.0.1 / arm64）。
+- **NFR-003** 策略求值应有 10 秒上限，超时按工具错误退出 2。超时路径通过可注入的 deadline 测试，不实际等待 10 秒。
 
 ### 5.2 可靠性与容灾
 
-- **NFR-005** 闸门必须 fail-closed：零受管文档、策略加载失败在任何 phase 都不得返回成功；零解析文档、零依赖边在 `phase >= 1` 都不得返回成功；解析错误在阻断阶段且未触发策略降级时不得返回成功。覆盖断言不受策略降级影响。
+- **NFR-005** 闸门必须 fail-closed：零受管文档、策略加载失败在任何 phase 都不得返回成功；零解析文档、零依赖边在 `phase >= 1` 都不得返回成功；解析错误在阻断阶段且未触发降级时不得返回成功。覆盖断言不受降级影响。
 - **NFR-006** 同一输入必须产出字节稳定的 JSON，便于 CI 比较与归档。
 
 ### 5.3 可观测性
@@ -321,8 +322,8 @@ sequenceDiagram
 
 ### 5.4 安全与合规
 
-- **NFR-008** frontmatter 是不可信输入：单文件上限 1 MiB，疑似 YAML 别名展开直接拒绝，策略求值有 10 秒上限。
-- **NFR-009** `-policy-from-head` 必须防止 Agent 通过修改工作区策略或基线改变判定；发现未提交改动时降级为只报告。
+- **NFR-008** frontmatter 是不可信输入：单文件上限 1 MiB，疑似 YAML 别名展开直接拒绝，策略求值有 10 秒上限。由 `TestFileSizeLimitProducesExtractError`、`TestYAMLAliasGuardProducesExtractError`、`TestEvalTimeoutExitsTwo` 覆盖。
+- **NFR-009** `-policy-from-head` 必须防止 Agent 通过修改工作区策略或基线改变判定；发现未提交改动时降级为只报告。由 `TestMaterializePolicyFromHEADReadsCommittedContent`、`TestPolicyFromHeadDowngradesOnDirtyPolicy`、`TestPolicyFromHeadDowngradesOnBaselineOutsideRoot` 覆盖。
 - 传输加密、身份认证与多租户权限不适用：工具只读取本地仓库，不对外提供服务。
 
 ### 5.5 构建与分发
@@ -364,39 +365,39 @@ sequenceDiagram
 | REQ-001 | `TestCleanCorpusPasses` | 已实现并测试 |
 | REQ-002 | `TestExtractErrorFailsClosedInPhase1` | 已实现并测试 |
 | REQ-003 | `TestCleanCorpusPasses`（间接覆盖 `status`/`depends_on`；`type`/`owner` 无逐字段断言） | 已实现并测试 |
-| REQ-004 | `TestExtractErrorFailsClosedInPhase1`（仅覆盖缺 frontmatter） | 已实现并测试 |
+| REQ-004 | `TestExtractErrorFailsClosedInPhase1`、`TestInvalidYAMLProducesExtractError`、`TestNonMappingFrontmatterProducesExtractError` | 已实现并测试 |
 | REQ-005 | `TestNormalizeRepoPath`、`TestNormalizedDependsOnResolves` | 已实现并测试 |
-| REQ-006 | 无独立用例；`documentFromMap` 的去重分支未被测试执行 | 已实现，无测试 |
-| REQ-007 | 无 | 已实现（大小上限与别名守卫），无测试 |
+| REQ-006 | `TestDependsOnDedupedPreservesFirstOrder` | 已实现并测试 |
+| REQ-007 | `TestFileSizeLimitProducesExtractError`、`TestYAMLAliasGuardProducesExtractError` | 已实现并测试 |
 | REQ-010 | `TestMissingTargetBlocks` | 已实现并测试 |
-| REQ-011 | `TestNonDependableStatusBlocks`（缺失 status 未单独覆盖） | 已实现并测试 |
+| REQ-011 | `TestNonDependableStatusBlocks`、`TestMissingStatusIsNotDependable` | 已实现并测试 |
 | REQ-012 | `TestLowercaseStatusIsNotDependable` | 已实现并测试 |
-| REQ-013 | `TestStandardDataResolvesAsDataStandard`、`status.rego` 守卫 | 已实现；守卫无独立测试 |
-| REQ-020 | `TestZeroGovernedDocumentsFailsClosed`（测试覆盖 phase 1） | 已实现并测试 |
-| REQ-021 | 无独立用例 | 已实现，无测试 |
+| REQ-013 | `TestStandardDataResolvesAsDataStandard`、`TestStatusRegoGuardEmitsPolicyLoadError` | 已实现并测试 |
+| REQ-020 | `TestZeroGovernedDocumentsFailsClosed`、`TestZeroGovernedDocumentsFailsClosedPhase0` | 已实现并测试 |
+| REQ-021 | `TestZeroParsedFailsClosedInPhase1` | 已实现并测试 |
 | REQ-022 | `TestZeroEdgesFailsClosed` | 已实现并测试 |
-| REQ-023 | `TestJSONSchemaAndStats`（仅断言 `edges_evaluated`，未断言另外两个计数） | 已实现，部分测试 |
+| REQ-023 | `TestJSONSchemaAndStats`、`TestJSONStatsCounts` | 已实现并测试 |
 | REQ-030 | `TestPhase0NeverBlocks`、`TestExtractErrorIsReportOnlyInPhase0` | 已实现并测试 |
 | REQ-031 | `TestMissingTargetBlocks` | 已实现并测试 |
 | REQ-032 | `TestBaselineSuppressesKnownViolation` | 已实现并测试 |
-| REQ-033 | `TestExtractErrorFailsClosedInPhase1`（仅未降级路径；脏策略 + extract_error 的降级路径未覆盖） | 已实现，部分测试 |
+| REQ-033 | `TestExtractErrorFailsClosedInPhase1`、`TestDirtyPolicyWithExtractErrorIsReportOnly` | 已实现并测试 |
 | REQ-034 | `TestBaselineDoesNotSuppressRenamedTarget` | 已实现并测试 |
 | REQ-040 | `TestJSONSchemaAndStats` | 已实现并测试 |
-| REQ-041 | 无独立用例 | 已实现，无测试 |
-| REQ-042 | 无 | 已实现，无自动化测试 |
-| REQ-043 | 无 | 已实现，无测试 |
-| REQ-050 | `TestPolicyFromHeadDowngradesOnDirtyBaseline` 仅验证调用路径，未断言策略内容确实来自 HEAD | 已实现，部分测试 |
-| REQ-051 | `TestPolicyFromHeadDowngradesOnDirtyBaseline`（仅覆盖脏 baseline；策略目录脏改动与 `-root` 外路径为手工验证） | 已实现，部分测试 |
-| REQ-052 | 无 | 已实现，**无测试** |
-| NFR-001 | 无 | 未实测 |
-| NFR-002 | 无 | **未实现** |
-| NFR-003 | 无 | 已实现，无测试 |
-| NFR-004 | `.github/workflows/release.yml` | 已定义，尚未在 CI 上实际跑过 |
-| NFR-005 | `TestZeroGovernedDocumentsFailsClosed` 等（未覆盖脏策略 + 零解析文档/零依赖边的组合） | 已实现，部分测试 |
-| NFR-006 | 无（没有重复运行并比较 JSON 原始字节的用例） | 已实现，无测试 |
+| REQ-041 | `TestSortFindingsOrder`、`TestJSONByteStableAcrossRuns` | 已实现并测试 |
+| REQ-042 | `TestGitHubFormat` | 已实现并测试 |
+| REQ-043 | `TestOutWritesReportToFile` | 已实现并测试 |
+| REQ-050 | `TestMaterializePolicyFromHEADReadsCommittedContent`、`TestPolicyFromHeadDowngradesOnDirtyBaseline` | 已实现并测试 |
+| REQ-051 | `TestPolicyFromHeadDowngradesOnDirtyBaseline`、`TestPolicyFromHeadDowngradesOnDirtyPolicy`、`TestPolicyFromHeadDowngradesOnBaselineOutsideRoot` | 已实现并测试 |
+| REQ-052 | `TestPolicyFromHeadOutsideRootFailsClosed` | 已实现并测试 |
+| NFR-001 | `TestNFR001ThousandDocsBudget`（1000 篇 38ms） | 已实测 |
+| NFR-002 | `TestPerformanceOverBudget`、`TestPerformanceBudgetDegradesToReportOnly`、`TestPerformanceBudgetKeepsPhase2Blocking`、`TestNFR002P95Budget`（p95 9ms） | 已实现并测试 |
+| NFR-003 | `TestEvalPolicyHonorsContextCancellation`、`TestEvalTimeoutExitsTwo` | 已实现并测试 |
+| NFR-004 | v0.2.0 release：三个工具的四平台资产与 `checksums.txt` | 已验证 |
+| NFR-005 | `TestZeroGovernedDocumentsFailsClosed`、`TestZeroParsedFailsClosedInPhase1`、`TestDirtyPolicyWithExtractErrorIsReportOnly`、`TestDirtyPolicyWithZeroEdgesStillFailsClosed` | 已实现并测试 |
+| NFR-006 | `TestJSONByteStableAcrossRuns` | 已实现并测试 |
 | NFR-007 | 部分覆盖：现有用例断言退出码与部分 stderr 文本 | 已实现，部分测试 |
-| NFR-008 | 无 | 已实现（大小上限、别名守卫、求值超时），无测试 |
-| NFR-009 | `TestPolicyFromHeadDowngradesOnDirtyBaseline`（仅覆盖脏 baseline，未断言 HEAD 内容） | 已实现，部分测试 |
+| NFR-008 | `TestFileSizeLimitProducesExtractError`、`TestYAMLAliasGuardProducesExtractError`、`TestEvalTimeoutExitsTwo` | 已实现并测试 |
+| NFR-009 | `TestMaterializePolicyFromHEADReadsCommittedContent`、`TestPolicyFromHeadDowngradesOnDirtyPolicy`、`TestPolicyFromHeadDowngradesOnBaselineOutsideRoot` | 已实现并测试 |
 
 ### 6.4 回滚与熔断
 

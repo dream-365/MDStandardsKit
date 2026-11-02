@@ -5,15 +5,18 @@ Each target has two forms:
 - `quality-report.md` / `quality-findings.json` — a real independent reviewer pass using `reviewer.md` and `rubric.v1.yaml`.
 - `quality-report.smoke.md` / `quality-findings.smoke.json` — a zero-level pipeline smoke test. It proves the tool runs, not the content quality of the target.
 
-## Real results (2026-11-02)
+## Real results (2026-11-03)
 
 | Target | Headline (core) | Diagnostic | Note |
 |---|---:|---:|---|
-| `docs/specs/SPEC-001-mdstandards/spec.md` | 93.0 | 90.7 | Template-conformant spec; the pain-evidence dimension is 50.0 because the spec records a metric but no incident. |
-| `docs/designs/doc-writing-skill.md` | 15.0 | 15.0 | A design record, not a spec; low structure scores are expected. |
-| `testdata/example-repo/docs/specs/example-spec.md` | 12.0 | 12.0 | A legacy example, not a template-conformant spec. |
+| `docs/specs/SPEC-001-mdstandards/spec.md` | 91.0 | 87.4 | 2026-11-03 re-review after implementation closeout; the pain-evidence dimension remains 50.0 because the spec records a metric but no incident. The 2026-11-02 pass (93.0 / 90.7) is archived as `quality-findings.2026-11-02.json` / `quality-report.2026-11-02.md`. |
+| `docs/specs/SPEC-002-idea-type/spec.md` | 93.3 | 87.7 | New independent pass after the structure closeout. |
+| `docs/designs/doc-writing-skill.md` | 15.0 | 15.0 | 2026-11-02 pass; a design record, not a spec; low structure scores are expected. |
+| `testdata/example-repo/docs/specs/example-spec.md` | 12.0 | 12.0 | 2026-11-02 pass; a legacy example, not a template-conformant spec. |
 
-The separation between the real spec (93.0) and the two non-spec documents (15.0 and 12.0) is the signal the scorecard is meant to provide. The real reviewer pass is independent of the writer; the auditor verifies evidence presence, section placement, and score arithmetic, not whether evidence is sufficient or true.
+The separation between the real specs (91.0 and 93.3) and the two non-spec documents (15.0 and 12.0) is the signal the scorecard is meant to provide. The real reviewer pass is independent of the writer; the auditor verifies evidence presence, section placement, and score arithmetic, not whether evidence is sufficient or true.
+
+The calibration set in `skills/doc-writer/spec/quality/calibration/gold.v1.json` stays pinned to the 2026-11-02 SPEC-001 revision and its archived findings.
 
 ## Smoke reports
 
