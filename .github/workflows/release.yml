@@ -149,6 +149,23 @@ jobs:
           fi
           env XDG_CACHE_HOME="$cache" ./bin/doc-writer-tool mdstandards --version | grep -q "mdstandards ${GITHUB_REF_NAME#v}"
 
+      - name: idea corpus smoke
+        env:
+          WITH_GO: ${{ matrix.with_go }}
+          BASE_URL: file://${{ github.workspace }}/release
+        run: |
+          set -eu
+          cache=$(mktemp -d)
+          if [ "$WITH_GO" = "true" ]; then
+            out=$(env XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 \
+              ./bin/doc-writer-tool mdstandards -root testdata/idea-repo -policy policy -phase 1 -format table)
+          else
+            out=$(env PATH=/usr/bin:/bin XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="$BASE_URL" \
+              ./bin/doc-writer-tool mdstandards -root testdata/idea-repo -policy policy -phase 1 -format table)
+          fi
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" | grep -q "scanned 2 documents, evaluated 0 edges"
+
   publish:
     needs: smoke
     runs-on: ubuntu-latest

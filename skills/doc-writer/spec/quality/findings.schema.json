@@ -56,7 +56,8 @@
                 }
               },
               "rationale": { "type": "string" },
-              "missing": { "type": "string" }
+              "missing": { "type": "string" },
+              "guess": { "type": "string" }
             }
           },
           {

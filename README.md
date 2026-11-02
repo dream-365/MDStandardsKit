@@ -8,14 +8,14 @@
 
 ## 作为 Claude Code 插件安装
 
-doc-writer 技能随本仓库作为插件发布。安装固定版本：
+doc-writer 和 idea-writer 技能随本仓库作为插件发布。安装固定版本：
 
 ```bash
-claude plugin marketplace add dream-365/MDStandardsKit#v0.1.0 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.0 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
-安装后在任意项目运行 `/doc-writer:doc-writer`。升级或回滚：
+安装后在任意项目运行 `/doc-writer:doc-writer` 或 `/doc-writer:idea-writer`。升级或回滚：
 
 ```bash
 claude plugin marketplace remove mdstandards
@@ -48,15 +48,41 @@ make build
 
 ## 它检查什么
 
-v1 只有两条规则：
+`spec` 类型有两条引用图规则：
 
 | 规则 ID | 含义 |
 |---|---|
 | `refs.missing_target` | `depends_on` 指向的目标不是受管文档 |
 | `refs.status_not_dependable` | 目标状态不是 `Approved` / `Published`，或缺失 |
 
-外加三条工程保障：策略加载失败即停、零受管文档 / 零依赖边即停、解析失败即停。
+`idea` 类型有一组结构规则：
+
+| 规则 ID | 含义 |
+|---|---|
+| `idea.missing_field` | 缺少 `id` / `title` / `date` / `tags` / `status` |
+| `idea.empty_title` | `title` 为空或只有空白 |
+| `idea.id_format` / `idea.id_duplicate` | `id` 不是 8 位大写字母，或在语料里重复 |
+| `idea.date_format` / `idea.date_invalid` | 日期不是 `YYYY-MM-DD`，或不是真实日历日期 |
+| `idea.path_shape` / `idea.date_dir_mismatch` / `idea.year_dir_mismatch` | 路径不是 `YYYY/YYYY-MM-DD/<slug>.md`，或日期与目录对不上 |
+| `idea.status_invalid` | 状态不在 `萌芽 / 探索中 / 已落地 / 搁置` |
+| `idea.tags_invalid` | `tags` 不是字符串列表 |
+| `idea.heading_missing` | 缺少四个必需二级标题之一 |
+| `idea.placeholder_remaining` | 模板 HTML 注释或 `id: ABCDEFGH` 未替换 |
+
+外加工程保障：策略加载失败即停、零受管文档即停、需要依赖图的类型零依赖边即停、解析失败即停。
 静默通过是这套工具最想消灭的东西，所以它自己也不允许静默。
+
+## idea 类型
+
+在想法库根目录放 `.mdstandards.json`：
+
+```json
+{"type":"idea"}
+```
+
+文件路径固定为 `YYYY/YYYY-MM-DD/<slug>.md`。结构错误在记录时阻断；内容评分只诊断，不阻止入库。
+空正文、`暂无`、`目前说不清，因为……` 都是允许的。内容评分用 `skills/idea-writer/` 的 rubric，
+报告写到 `docs/quality/ideas/<id>/`，不进入受管文档。
 
 ## 文档格式
 
@@ -81,7 +107,7 @@ depends_on:
 |---|---|
 | 0 | 干净，或 `-phase 0` 的只报告模式 |
 | 1 | 存在违规且处于阻断状态 |
-| 2 | 策略加载失败、版本不支持、零受管文档、零依赖边、存在解析错误 |
+| 2 | 策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、存在解析错误 |
 
 ## 目录
 
@@ -92,10 +118,12 @@ depends_on:
 ├── .claude-plugin/          Claude Code 插件与 marketplace manifest
 ├── bin/doc-writer-tool      技能调用的工具 dispatcher
 ├── skills/doc-writer/       Spec 写作技能
+├── skills/idea-writer/      idea 写作与评分技能
 ├── scripts/shim-test.sh     dispatcher 行为测试
 ├── policy/                  Rego 规则与标准（唯一事实来源）
-├── testdata/example-repo/   可运行的示例语料
-├── tools/qualitycheck/      Spec 内容质量评分卡审计器
+├── testdata/example-repo/   可运行的 Spec 示例语料
+├── testdata/idea-repo/      可运行的 idea 示例语料
+├── tools/qualitycheck/      Spec / idea 内容质量评分卡审计器
 ├── docs/
 │   ├── architecture/        架构文档
 │   ├── designs/             设计记录
@@ -115,6 +143,7 @@ depends_on:
 - [doc-writer 技能设计](docs/designs/doc-writing-skill.md)
 - [doc-writer 插件分发设计](docs/designs/doc-writer-plugin-distribution.md)
 - [Spec 内容质量评分卡设计](docs/designs/spec-quality-scorecard.md)
+- [idea 类型设计](docs/designs/idea-document-type.md)
 - [质量报告索引](docs/quality/README.md)
 
 ## 已知限制
