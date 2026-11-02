@@ -6,6 +6,25 @@
 那篇文档必须存在，并且处于可被依赖的状态（`Approved` 或 `Published`）。构建全绿、
 页面都在，不代表 Agent 没有照着过期的架构写代码。
 
+## 作为 Claude Code 插件安装
+
+doc-writer 技能随本仓库作为插件发布。安装固定版本：
+
+```bash
+claude plugin marketplace add dream-365/MDStandardsKit#v0.1.0 --scope user
+claude plugin install doc-writer@mdstandards --scope user
+```
+
+安装后在任意项目运行 `/doc-writer:doc-writer`。升级或回滚：
+
+```bash
+claude plugin marketplace remove mdstandards
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.0 --scope user
+claude plugin install doc-writer@mdstandards --scope user
+```
+
+插件自带 `mdstandards` 和 `qualitycheck` 的下载与构建兜底：支持平台首次运行会从 Release 下载并校验 sha256，失败时用 Go 1.27.1+ 本地构建。
+
 ## 快速开始
 
 ```bash
@@ -70,6 +89,10 @@ depends_on:
 .
 ├── main.go / extract.go / normalize.go / report.go   单 main 包
 ├── *_test.go
+├── .claude-plugin/          Claude Code 插件与 marketplace manifest
+├── bin/doc-writer-tool      技能调用的工具 dispatcher
+├── skills/doc-writer/       Spec 写作技能
+├── scripts/shim-test.sh     dispatcher 行为测试
 ├── policy/                  Rego 规则与标准（唯一事实来源）
 ├── testdata/example-repo/   可运行的示例语料
 ├── tools/qualitycheck/      Spec 内容质量评分卡审计器
@@ -90,6 +113,7 @@ depends_on:
 - [架构](docs/architecture/mdstandards-architecture.md)
 - [v1 规格](docs/specs/SPEC-001-mdstandards/spec.md)
 - [doc-writer 技能设计](docs/designs/doc-writing-skill.md)
+- [doc-writer 插件分发设计](docs/designs/doc-writer-plugin-distribution.md)
 - [Spec 内容质量评分卡设计](docs/designs/spec-quality-scorecard.md)
 - [质量报告索引](docs/quality/README.md)
 
@@ -99,6 +123,7 @@ depends_on:
 - `status: Approved` 由同一条 Agent 写入路径设置，v1 不校验审批来源。
 - 不检测循环引用，与 PDS-STD-004 §8.5.6 存在偏离。
 - Agent hook 未安装时是静默无操作，当前无检测手段。
+- 插件分发只支持 darwin/arm64、darwin/amd64、linux/amd64、linux/arm64；Windows 不在 v0.1 范围内。
 
 ## 命令
 

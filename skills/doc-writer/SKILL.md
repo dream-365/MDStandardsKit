@@ -38,7 +38,7 @@ v1 只支持技术 Spec，目录为 `docs/specs/SPEC-<三位数字>-<kebab>/spec
 4. **起草**：读 `spec/template.md`，写每一章前读 `spec/chapters/` 下对应的指南。只写能被评审的内容；不贴实现代码、测试日志或偶发报错。
 5. **自检与质量评分**：
    - **5a 写作自检**：读 `spec/checks.md`，逐条核对。每条要求文档中的位置或证据；`无`、`...`、`待补充` 不算回答。
-   - **5b 独立质量评审**：另起独立评审上下文，按 `spec/quality/reviewer.md` 产出 `quality-findings.json`；运行 `qualitycheck -audit -writer-session <id>`，读 `quality-report.md`。写作修复后必须重新评审，只提交最终 findings/report。
+   - **5b 独立质量评审**：另起独立评审上下文，按 `spec/quality/reviewer.md` 产出 `quality-findings.json`；运行 `${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool qualitycheck -audit -writer-session <id>`，读 `quality-report.md`。写作修复后必须重新评审，只提交最终 findings/report。
 6. **外部闸门**：先 `-phase 0` 看全貌，再 `-phase 1` 阻断。命令见下。
 7. **修订**：修改已批准或已落地的 Spec 时，状态立即回退 `In Review`，更新 `updated_at`，在 `changelog.md` 追加记录；回退期间不改生产代码。
 
@@ -51,19 +51,18 @@ v1 只支持技术 Spec，目录为 `docs/specs/SPEC-<三位数字>-<kebab>/spec
 - 评分卡只验证证据存在、章节位置与分数算术，不判断证据是否充分或真实。
 
 ```bash
-<MDStandardsKit>/qualitycheck -validate-rubric -rubric <MDStandardsKit>/.claude/skills/doc-writer/spec/quality/rubric.v1.yaml
-<MDStandardsKit>/qualitycheck -audit -rubric <rubric> -findings <findings.json> -doc <spec.md> -writer-session <id> -out <report.md>
+${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool qualitycheck -validate-rubric -rubric ${CLAUDE_PLUGIN_ROOT}/skills/doc-writer/spec/quality/rubric.v1.yaml
+${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool qualitycheck -audit -rubric <rubric> -findings <findings.json> -doc <spec.md> -writer-session <id> -out <report.md>
 ```
-
-工具用 `go run ./tools/qualitycheck` 或 `go build ./tools/qualitycheck` 生成。
 
 ## 外部闸门
 
-在目标仓库根目录运行。`<MDStandardsKit>` 替换为本仓 checkout 路径；二进制用 `make build` 生成，或使用已安装的 `mdstandards`。
+在目标仓库根目录运行。工具和 policy 随插件分发；`${CLAUDE_PLUGIN_ROOT}` 由 Claude Code 在技能正文里内联替换。项目级 policy 覆盖必须显式设置 `MDSTANDARDS_POLICY_DIR` 和 `MDSTANDARDS_ALLOW_POLICY_OVERRIDE=1`，否则 shim 会 exit 2。
 
 ```bash
-<MDStandardsKit>/mdstandards -root . -policy <MDStandardsKit>/policy -phase 0 -format json
-<MDStandardsKit>/mdstandards -root . -policy <MDStandardsKit>/policy -phase 1 -format json
+${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool mdstandards -root . -policy "${MDSTANDARDS_POLICY_DIR:-${CLAUDE_PLUGIN_ROOT}/policy}" -phase 0 -format json
+${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool mdstandards -root . -policy "${MDSTANDARDS_POLICY_DIR:-${CLAUDE_PLUGIN_ROOT}/policy}" -phase 1 -format json
+${CLAUDE_PLUGIN_ROOT}/bin/doc-writer-tool mdstandards --version
 ```
 
 - phase 0 退出 0 也可能包含 `extract_errors`；必须解析 JSON 并处理，不能只看退出码。

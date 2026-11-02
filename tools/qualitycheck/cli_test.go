@@ -9,7 +9,7 @@ import (
 )
 
 func realRubricPath() string {
-	return filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	return filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 }
 
 func runQC(t *testing.T, args ...string) (int, string, string) {
@@ -228,13 +228,29 @@ func TestAuditRejections(t *testing.T) {
 		"empty target":   {func() Findings { x := mutate("", nil); x.Target = ""; return x }(), "target is empty"},
 		"role":           {func() Findings { x := mutate("", nil); x.Reviewer.Role = "author"; return x }(), "reviewer.role"},
 		"empty session":  {func() Findings { x := mutate("", nil); x.Reviewer.SessionID = ""; return x }(), "reviewer.session_id"},
-		"unknown id":     {func() Findings { x := mutate("", nil); x.Items = append(x.Items, ItemFinding{ID: "nope", Status: "scored", Missing: "m"}); return x }(), "unknown item id"},
+		"unknown id": {func() Findings {
+			x := mutate("", nil)
+			x.Items = append(x.Items, ItemFinding{ID: "nope", Status: "scored", Missing: "m"})
+			return x
+		}(), "unknown item id"},
 		"level range":    {mutate("test.item", func(it *ItemFinding) { it.Level = 3 }), "out of range"},
 		"level0 missing": {mutate("test.item", func(it *ItemFinding) { it.Missing = "" }), "missing reason"},
 		"no evidence":    {mutate("test.item", func(it *ItemFinding) { it.Level = 2; it.Missing = "" }), "requires evidence"},
-		"empty quote":    {mutate("test.item", func(it *ItemFinding) { it.Level = 2; it.Missing = ""; it.Evidence = []Evidence{{Section: "1. Test", Quote: ""}} }), "quote is empty"},
-		"bad section":    {mutate("test.item", func(it *ItemFinding) { it.Level = 2; it.Missing = ""; it.Evidence = []Evidence{{Section: "nope", Quote: "Evidence here."}} }), "not declared"},
-		"na no reason":   {func() Findings { x := mutate("", nil); setItem(&x, "test.item", func(it *ItemFinding) { it.Status = "na" }); return x }(), "na requires a reason"},
+		"empty quote": {mutate("test.item", func(it *ItemFinding) {
+			it.Level = 2
+			it.Missing = ""
+			it.Evidence = []Evidence{{Section: "1. Test", Quote: ""}}
+		}), "quote is empty"},
+		"bad section": {mutate("test.item", func(it *ItemFinding) {
+			it.Level = 2
+			it.Missing = ""
+			it.Evidence = []Evidence{{Section: "nope", Quote: "Evidence here."}}
+		}), "not declared"},
+		"na no reason": {func() Findings {
+			x := mutate("", nil)
+			setItem(&x, "test.item", func(it *ItemFinding) { it.Status = "na" })
+			return x
+		}(), "na requires a reason"},
 		"unknown status": {mutate("test.item", func(it *ItemFinding) { it.Status = "maybe" }), "unknown status"},
 	}
 	for name, tc := range cases {

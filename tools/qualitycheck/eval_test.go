@@ -225,7 +225,7 @@ func TestEvalSeparatesStrongFromWeak(t *testing.T) {
 }
 
 func TestReviewerContract(t *testing.T) {
-	path := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "reviewer.md")
+	path := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "reviewer.md")
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -239,7 +239,7 @@ func TestReviewerContract(t *testing.T) {
 }
 
 func TestFindingsSchemaContract(t *testing.T) {
-	path := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "findings.schema.json")
+	path := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "findings.schema.json")
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -263,7 +263,7 @@ func TestFindingsSchemaContract(t *testing.T) {
 }
 
 func TestRealRubricHasChapterCoreItems(t *testing.T) {
-	path := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	path := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	r, err := LoadRubric(path)
 	if err != nil {
 		t.Fatal(err)

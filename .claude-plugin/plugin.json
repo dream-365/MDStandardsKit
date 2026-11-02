@@ -1,0 +1,12 @@
+{
+  "name": "doc-writer",
+  "displayName": "doc-writer",
+  "version": "0.1.0",
+  "description": "按 MDStandardsKit 规范起草、修订和检查技术 Spec。",
+  "author": {
+    "name": "代码与咖啡渍"
+  },
+  "homepage": "https://github.com/dream-365/MDStandardsKit",
+  "repository": "https://github.com/dream-365/MDStandardsKit",
+  "keywords": ["spec", "documentation", "mdstandards"]
+}

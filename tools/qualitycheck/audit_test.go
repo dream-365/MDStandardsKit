@@ -90,7 +90,7 @@ func setItem(f *Findings, id string, mut func(*ItemFinding)) {
 }
 
 func TestValidateRealRubric(t *testing.T) {
-	path := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	path := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	r, err := LoadRubric(path)
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestValidateRejectsCoreNA(t *testing.T) {
 }
 
 func TestAuditAllZeroSucceeds(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "# Spec\n\nNothing here.\n")
 	r, err := LoadRubric(rubricPath)
 	if err != nil {
@@ -135,7 +135,7 @@ func TestAuditAllZeroSucceeds(t *testing.T) {
 }
 
 func TestAuditQuoteNotFound(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "## 1.2 核心技术痛点\n\nSomething real.\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)
@@ -154,7 +154,7 @@ func TestAuditQuoteNotFound(t *testing.T) {
 }
 
 func TestAuditQuoteWrongSection(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "## 1.1 系统现状\n\nAlpha.\n\n## 1.2 核心技术痛点\n\nBeta.\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)
@@ -173,7 +173,7 @@ func TestAuditQuoteWrongSection(t *testing.T) {
 }
 
 func TestAuditRequiresWriterSession(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "# Spec\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)
@@ -187,7 +187,7 @@ func TestAuditRequiresWriterSession(t *testing.T) {
 }
 
 func TestAuditRejectsSameSession(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "# Spec\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)
@@ -201,7 +201,7 @@ func TestAuditRejectsSameSession(t *testing.T) {
 }
 
 func TestAuditRejectsNAOnCore(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "# Spec\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)
@@ -219,7 +219,7 @@ func TestAuditRejectsNAOnCore(t *testing.T) {
 }
 
 func TestAuditRejectsAllNASection(t *testing.T) {
-	rubricPath := filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
+	rubricPath := filepath.Join("..", "..", "skills", "doc-writer", "spec", "quality", "rubric.v1.yaml")
 	docPath := writeTemp(t, "spec.md", "## 3.1 总体架构\n\nTopology.\n")
 	r, _ := LoadRubric(rubricPath)
 	f := baseFindings(r, rubricPath, docPath)

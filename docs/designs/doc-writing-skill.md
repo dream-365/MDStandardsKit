@@ -6,6 +6,8 @@ Repo: MDStandardsKit
 Status: APPROVED
 Mode: Builder
 
+> 分发部分已被 `docs/designs/doc-writer-plugin-distribution.md` 取代；本文中的 `.claude/skills/doc-writer` 路径与 release tarball 描述是历史记录，不是当前安装方式。
+
 ## Problem Statement
 
 用 Agent 写 Spec 时，每次产出的结构、章节覆盖和论证顺序都不一样。评审者每次都要重新适应一份新文档，上一次踩过的坑也不会自动被避开。用户的原话：

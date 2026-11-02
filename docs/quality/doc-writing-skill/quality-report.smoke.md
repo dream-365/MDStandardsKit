@@ -2,7 +2,7 @@
 
 - Target: `docs/designs/doc-writing-skill.md`
 - Rubric: 1.0.0 (`acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947`)
-- Target SHA-256: `38be1d04747b3edfe78415a0a7ce69898753fa0bd6bdd423543eab97756233ce`
+- Target SHA-256: `6775bbe0d928f1f4f9e38c3345dd258daff5e511f8ce6005bbb83e34525547c4`
 - Reviewer session: `reviewer-smoke`
 
 **Headline score (core): 0.0**  |  Diagnostic score (all): 0.0
