@@ -14,9 +14,16 @@ fail() {
 
 release="$work/release"
 mkdir -p "$release"
-printf '#!/bin/sh\necho "FAKE_MDS $*"\n' >"$release/mdstandards-darwin-arm64"
-printf '#!/bin/sh\necho "FAKE_QC $*"\n' >"$release/qualitycheck-darwin-arm64"
-chmod +x "$release"/mdstandards-darwin-arm64 "$release"/qualitycheck-darwin-arm64
+case "$(uname -s):$(uname -m)" in
+  Darwin:arm64) platform=darwin-arm64 ;;
+  Darwin:x86_64) platform=darwin-amd64 ;;
+  Linux:x86_64) platform=linux-amd64 ;;
+  Linux:aarch64) platform=linux-arm64 ;;
+  *) fail "unsupported test platform $(uname -s)/$(uname -m)" ;;
+esac
+printf '#!/bin/sh\necho "FAKE_MDS $*"\n' >"$release/mdstandards-$platform"
+printf '#!/bin/sh\necho "FAKE_QC $*"\n' >"$release/qualitycheck-$platform"
+chmod +x "$release/mdstandards-$platform" "$release/qualitycheck-$platform"
 
 if command -v sha256sum >/dev/null 2>&1; then
   hash() { sha256sum "$1" | awk '{print $1}'; }
@@ -26,8 +33,8 @@ fi
 
 write_checksums() {
   {
-    printf '%s  mdstandards-darwin-arm64\n' "$(hash "$release/mdstandards-darwin-arm64")"
-    printf '%s  qualitycheck-darwin-arm64\n' "$(hash "$release/qualitycheck-darwin-arm64")"
+    printf '%s  mdstandards-%s\n' "$(hash "$release/mdstandards-$platform")" "$platform"
+    printf '%s  qualitycheck-%s\n' "$(hash "$release/qualitycheck-$platform")" "$platform"
   } >"$release/checksums.txt"
 }
 write_checksums
@@ -46,7 +53,7 @@ out=$(XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="file://$work/missing
 printf '%s\n' "$out" | grep -q '^FAKE_MDS' || fail "cache hit did not use the cached asset"
 
 # 3. checksum mismatch fails closed and never executes
-printf 'deadbeef  mdstandards-darwin-arm64\n' >"$release/checksums.txt"
+printf 'deadbeef  mdstandards-%s\n' "$platform" >"$release/checksums.txt"
 rm -rf "$cache"
 mkdir -p "$cache"
 if XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="file://$release" "$tool" mdstandards --version >"$work/mismatch.out" 2>"$work/mismatch.err"; then
