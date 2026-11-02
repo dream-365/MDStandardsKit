@@ -15,6 +15,11 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 )
 
+var (
+	version    = "dev"
+	policyHash = "unknown"
+)
+
 type Standard struct {
 	StandardVersion    string   `json:"standard_version"`
 	GovernedGlobs      []string `json:"governed_globs"`
@@ -33,6 +38,7 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("mdstandards", flag.ContinueOnError)
 	fs.SetOutput(stderr)
+	showVersion := fs.Bool("version", false, "print version and exit")
 	root := fs.String("root", ".", "repository root")
 	policyDirFlag := fs.String("policy", "policy", "policy bundle directory")
 	format := fs.String("format", "table", "output format: table|json|github")
@@ -43,6 +49,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	policyFromHead := fs.Bool("policy-from-head", false, "load the policy bundle from git HEAD")
 	if err := fs.Parse(args); err != nil {
 		return 2
+	}
+	if *showVersion {
+		fmt.Fprintf(stdout, "mdstandards %s policy %s\n", version, policyHash)
+		return 0
 	}
 	if *phase < 0 || *phase > 2 {
 		fmt.Fprintln(stderr, "phase must be 0, 1 or 2")

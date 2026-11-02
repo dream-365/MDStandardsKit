@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+var (
+	version    = "dev"
+	policyHash = "unknown"
+)
+
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
@@ -16,6 +21,7 @@ func main() {
 func run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("qualitycheck", flag.ContinueOnError)
 	fs.SetOutput(stderr)
+	showVersion := fs.Bool("version", false, "print version and exit")
 	rubricPath := fs.String("rubric", "", "rubric YAML path")
 	findingsPath := fs.String("findings", "", "findings JSON path")
 	docPath := fs.String("doc", "", "target spec.md path")
@@ -27,6 +33,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 	calibrate := fs.Bool("calibrate", false, "compare two independent reviewer passes")
 	if err := fs.Parse(args); err != nil {
 		return 2
+	}
+	if *showVersion {
+		fmt.Fprintf(stdout, "qualitycheck %s policy %s\n", version, policyHash)
+		return 0
 	}
 
 	switch {

@@ -13,7 +13,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.27"
+          go-version: "1.27.1"
 
       - name: vet
         run: go vet ./...
@@ -26,3 +26,11 @@ jobs:
 
       - name: self-check
         run: ./mdstandards -root . -policy ./policy -phase 1 -format github
+
+      - name: validate plugin manifests
+        run: |
+          npm i -g @anthropic-ai/claude-code@2.1.292
+          claude plugin validate .
+
+      - name: shim behavior tests
+        run: sh scripts/shim-test.sh

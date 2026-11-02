@@ -129,7 +129,7 @@ func TestRepeatedAuditByteIdentical(t *testing.T) {
 }
 
 func TestChecksRubricConsistency(t *testing.T) {
-	checks, err := os.ReadFile(filepath.Join("..", "..", ".claude", "skills", "doc-writer", "spec", "checks.md"))
+	checks, err := os.ReadFile(filepath.Join("..", "..", "skills", "doc-writer", "spec", "checks.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

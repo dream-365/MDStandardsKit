@@ -8,7 +8,7 @@
 
 **Why:** Needed before Stage 1/2 can gate on the score; v1 is report-only.
 
-**Context:** Deferred from the v1 scorecard (D1). The scaffold exists at `.claude/skills/doc-writer/spec/quality/calibration/gold.v1.json`: SPEC-001 is gold with human adjudication (human-vs-first core kappa 1.000; human-vs-second core kappa 0.651), and two low-score anchors remain candidates. Four more human-scored specs and the blocking-threshold decision remain.
+**Context:** Deferred from the v1 scorecard (D1). The scaffold exists at `skills/doc-writer/spec/quality/calibration/gold.v1.json`: SPEC-001 is gold with human adjudication (human-vs-first core kappa 1.000; human-vs-second core kappa 0.651), and two low-score anchors remain candidates. Four more human-scored specs and the blocking-threshold decision remain.
 
 **Effort:** M
 **Priority:** P2
@@ -22,6 +22,6 @@
 
 **Why:** The design originally promised it; the release workflow previously uploaded only binaries.
 
-**Context:** The release job now packages `.claude/skills/doc-writer/`, `tools/qualitycheck/`, `policy/`, `go.mod`, and `go.sum` on every `v*` tag.
+**Context:** The repository is now a Claude Code plugin root: `.claude-plugin/plugin.json` and `marketplace.json` point at `skills/doc-writer/`; the release job publishes `doc-writer@mdstandards` with per-platform `mdstandards`/`qualitycheck` assets and `checksums.txt`.
 
 **Completed:** 2026-11-02 (no version source)

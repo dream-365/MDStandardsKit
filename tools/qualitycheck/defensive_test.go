@@ -213,4 +213,3 @@ func TestTwoItemScoring(t *testing.T) {
 		t.Fatalf("headline=%v diagnostic=%v, want 100/50", res.Headline, res.Diagnostic)
 	}
 }
-

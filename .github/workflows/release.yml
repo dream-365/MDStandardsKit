@@ -8,49 +8,173 @@ permissions:
   contents: write
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      policy_hash: ${{ steps.meta.outputs.policy_hash }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.1"
+
+      - name: verify tag and policy hash
+        id: meta
+        run: |
+          set -eu
+          version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -1)
+          tag=${GITHUB_REF_NAME#v}
+          if [ "$version" != "$tag" ]; then
+            echo "tag $GITHUB_REF_NAME does not match plugin.json version $version" >&2
+            exit 1
+          fi
+          hash=$(find policy -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "policy_hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: test on the tagged commit
+        run: make check
+
+      - name: validate plugin manifests
+        run: |
+          npm i -g @anthropic-ai/claude-code@2.1.292
+          claude plugin validate .
+
   build:
+    needs: verify
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - goos: darwin
             goarch: arm64
+          - goos: darwin
+            goarch: amd64
           - goos: linux
             goarch: amd64
+          - goos: linux
+            goarch: arm64
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.27"
+          go-version: "1.27.1"
 
-      - name: build
+      - name: build both tools
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
+          VERSION: ${{ needs.verify.outputs.version }}
+          POLICY_HASH: ${{ needs.verify.outputs.policy_hash }}
         run: |
-          go build -trimpath -ldflags="-s -w" -o mdstandards-${{ matrix.goos }}-${{ matrix.goarch }} .
+          set -eu
+          ldflags="-s -w -X main.version=$VERSION -X main.policyHash=$POLICY_HASH"
+          go build -trimpath -ldflags="$ldflags" -o "mdstandards-$GOOS-$GOARCH" .
+          go build -trimpath -ldflags="$ldflags" -o "qualitycheck-$GOOS-$GOARCH" ./tools/qualitycheck
 
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: mdstandards-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: assets-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            mdstandards-${{ matrix.goos }}-${{ matrix.goarch }}
+            qualitycheck-${{ matrix.goos }}-${{ matrix.goarch }}
 
-  package:
-    runs-on: ubuntu-latest
+  checksums:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: generate checksums
+        run: |
+          set -eu
+          cd release
+          find . -maxdepth 1 -type f ! -name checksums.txt -printf '%f\n' | sort | xargs sha256sum > checksums.txt
+          cat checksums.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: release/checksums.txt
+
+  smoke:
+    needs: checksums
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - leg: no-go
+            with_go: "false"
+          - leg: with-go
+            with_go: "true"
     steps:
       - uses: actions/checkout@v4
 
-      - name: package doc-writer skill
+      - uses: actions/setup-go@v5
+        if: matrix.with_go == 'true'
+        with:
+          go-version: "1.27.1"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: PR-level shim behavior tests
+        run: sh scripts/shim-test.sh
+
+      - name: install smoke
+        env:
+          WITH_GO: ${{ matrix.with_go }}
+          BASE_URL: file://${{ github.workspace }}/release
         run: |
-          tar -czf doc-writer-skill.tar.gz \
-            .claude/skills/doc-writer \
-            tools/qualitycheck \
-            policy \
-            go.mod \
-            go.sum
+          set -eu
+          cache=$(mktemp -d)
+          if [ "$WITH_GO" = "true" ]; then
+            env XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 \
+              ./bin/doc-writer-tool mdstandards -root testdata/example-repo -policy policy -phase 1 -format table
+            test -x "$cache/mdstandards/$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json)/linux-amd64/mdstandards"
+          else
+            env PATH=/usr/bin:/bin XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="$BASE_URL" \
+              ./bin/doc-writer-tool mdstandards -root testdata/example-repo -policy policy -phase 1 -format table
+            version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json)
+            test -x "$cache/mdstandards/$version/linux-amd64/mdstandards"
+          fi
+
+  publish:
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: doc-writer-skill.tar.gz
+          files: release/*
+
+  cross-version:
+    needs: publish
+    if: ${{ !startsWith(github.ref_name, 'v0.1.') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: upgrade and rollback smoke
+        run: |
+          set -eu
+          npm i -g @anthropic-ai/claude-code@2.1.292
+          claude plugin marketplace add dream-365/MDStandardsKit#v0.1.0 --scope user
+          claude plugin install doc-writer@mdstandards --scope user
+          claude plugin marketplace remove mdstandards
+          claude plugin marketplace add "dream-365/MDStandardsKit#${GITHUB_REF_NAME}" --scope user
+          claude plugin install doc-writer@mdstandards --scope user
+          claude plugin marketplace remove mdstandards
+          claude plugin marketplace add dream-365/MDStandardsKit#v0.1.0 --scope user
+          claude plugin install doc-writer@mdstandards --scope user
