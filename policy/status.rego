@@ -20,6 +20,7 @@ deny contains finding if {
 # case-sensitive. v1 is intentionally stricter than PDS-STD-004 8.5.2 because
 # reference notes are not parsed; see the design doc.
 deny contains finding if {
+	object.get(input, "document_type", "spec") == "spec"
 	some doc in input.documents
 	some target in doc.depends_on
 	target_doc := index[target]

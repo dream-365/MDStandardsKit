@@ -4,6 +4,7 @@ import rego.v1
 
 # Rule 1: every depends_on target must exist in the governed corpus.
 deny contains finding if {
+	object.get(input, "document_type", "spec") == "spec"
 	some doc in input.documents
 	some target in doc.depends_on
 	not index[target]

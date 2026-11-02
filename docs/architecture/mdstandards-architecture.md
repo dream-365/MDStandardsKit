@@ -25,14 +25,15 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 
 ### v1 包含
 
-- 两条规则：引用存在、目标状态可依赖。
+- `spec` 类型的两条规则：引用存在、目标状态可依赖。
+- `idea` 类型（v1.1）：仓库级类型声明、结构规则、独立内容评分卡；spec 的引用图规则不变。
 - 一个二进制，内嵌 OPA 引擎，策略包从仓库读取。
 - 两个执行点：CI 合并时、Agent 写完自检时。
 - 三阶段 Rollout 与存量违规基线。
 
 ### v1 不包含
 
-- 必填字段校验、status 枚举校验、状态流转校验、复审有效期、审批来源校验（全部 v2）。
+- `spec` 类型的必填字段校验、status 枚举校验、状态流转校验、复审有效期、审批来源校验（全部 v2）；`idea` 类型的字段、标题、路径校验见 §5.2。
 - 循环引用检测（PDS-STD-004 §8.5.6 要求，v1 明确偏离，见 §9）。
 - pre-commit 执行点（v1.1）。
 - 包管理器分发。
@@ -44,12 +45,13 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
                  ┌─────────────────────────────┐
    CLI flags ───▶│ mdstandards (single binary) │
                  │                             │
-                 │  1. load standard.json      │──▶ 读 policy/data/standard.json
-                 │  2. extract corpus          │──▶ 遍历 governed_globs
-                 │  3. coverage assertions     │──▶ 零文档 / 零边 → exit 2
-                 │  4. evaluate Rego           │──▶ 内嵌 OPA + policy/*.rego
-                 │  5. baseline filter         │──▶ 精确三元组匹配
-                 │  6. render report           │──▶ table | json | github
+                 │  1. load standard + config  │──▶ standard.json + .mdstandards.json
+                 │  2. resolve document type   │──▶ document_types[type].globs
+                 │  3. extract corpus          │──▶ 遍历 globs；按类型抽字段
+                 │  4. coverage assertions     │──▶ 零文档 / 需要图时零边 → exit 2
+                 │  5. evaluate Rego           │──▶ 内嵌 OPA + policy/*.rego
+                 │  6. baseline filter         │──▶ 精确三元组匹配
+                 │  7. render report           │──▶ table | json | github
                  └──────────────┬──────────────┘
                                 │
                                 ▼
@@ -64,8 +66,12 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 | `extract.go` | 遍历受管文件、解析 frontmatter、构建语料 |
 | `normalize.go` | 路径归一化（D6 + D12） |
 | `report.go` | findings 结构、三种输出格式、基线过滤 |
-| `policy/*.rego` | 两条规则 + 载入失败守卫 |
-| `policy/data/standard.json` | 唯一事实来源 |
+| `policy/*.rego` | spec 两条图规则 + idea 结构规则 + 载入失败守卫 |
+| `policy/data/standard.json` | 唯一事实来源；`document_types` 存放类型档案 |
+
+### 3.1 taskscheck（独立二进制）
+
+`taskscheck` 不并入 mdstandards。它读取 `docs/specs/**/spec.md` 与同目录 `tasks.md`，校验任务 ID、依赖无环、Goal 专用覆盖、写冲突、完成标准与 `spec_sha256`。mdstandards 的 0/1/2 与 `-dump-corpus` 契约不变。边界原因见 `docs/designs/tasks-boundary-spike.md`：`document_types` 是仓库级配置，tasks 与 spec 需要在同一仓库共存。
 
 ## 4. 数据契约
 
@@ -81,6 +87,28 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
   }
 }
 ```
+
+`document_types` 是可选的类型档案，键是仓库级 `.mdstandards.json` 声明的 `type`：
+
+```json
+{
+  "document_types": {
+    "idea": {
+      "globs": ["20*/**/*.md"],
+      "required_fields": ["id", "title", "date", "tags", "status"],
+      "status_values": ["萌芽", "探索中", "已落地", "搁置"],
+      "required_headings": ["一句话描述", "想法", "为什么有意思", "下一步"],
+      "id_pattern": "^[A-Z]{8}$",
+      "date_field": "date",
+      "graph": false,
+      "placeholder_markers": ["<!-- 模板注释 -->"]
+    }
+  }
+}
+```
+
+`spec` 仍用顶层 `governed_globs`；其他类型用档案里的 `globs`。`graph: false` 表示该类型不要求依赖边，
+零依赖边覆盖断言不触发。宽 glob 让路径形状规则能看见两层/四层路径，而不是静默忽略。
 
 外层的 `standard` 键是必须的：OPA 把数据文档按根合并，不用文件名做命名空间。
 没有这一层，`data.standard` 会是 undefined。
@@ -101,6 +129,10 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 ```
 
 每个受管文件必须产出一条 document 或一条 extract_error，不会被静默丢弃。
+
+idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`sections`、`missing`、
+`date_invalid`、`tags_invalid`。这些字段都带 `omitempty`，只在 `docType == "idea"` 时填充，
+所以 spec 的 `-dump-corpus` 输出逐字节不变。
 
 ### 4.3 findings
 
@@ -142,7 +174,7 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 |---|---|
 | 0 | 干净；或 `-phase 0` 的只报告模式 |
 | 1 | 存在违规且处于阻断状态 |
-| 2 | 工具或抽取错误：策略加载失败、版本不支持、零受管文档、零依赖边、存在解析错误 |
+| 2 | 工具或抽取错误：策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、存在解析错误 |
 
 ## 5. 规则与失败模式
 
@@ -161,6 +193,45 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 | 单个文件解析失败 | 计入 `extract_errors`，phase ≥ 1 时 exit 2 | 否 |
 | Agent 修改 `policy/` 或 `baseline.json` | `-policy-from-head` 从 HEAD 读策略；策略或 baseline 有未提交改动时降级为只报告 | 否（有警告） |
 | Agent hook 根本没装 | 无检测手段 | **是，已知关键缺口** |
+
+### 5.2 idea 类型规则
+
+`policy/idea.rego` 只在 `input.document_type == "idea"` 时生效；`.mdstandards.json` 损坏、
+type 未知或含未知键时，CLI 在求值前 exit 2。
+
+| 规则 | 含义 |
+|---|---|
+| `idea.missing_field` | 缺少 `id` / `date` / `tags` / `status`（title 由 `empty_title` 处理） |
+| `idea.empty_title` | `title` 为空或只有空白 |
+| `idea.id_format` | `id` 不匹配 `^[A-Z]{8}$` |
+| `idea.id_duplicate` | 同一语料里出现重复 `id` |
+| `idea.date_format` | 日期不是 `YYYY-MM-DD` |
+| `idea.date_invalid` | 日期格式正确但不是真实日历日期，或带时间 |
+| `idea.path_shape` | 路径不是恰好三层，或年份/日期目录格式不对 |
+| `idea.date_dir_mismatch` | frontmatter `date` 与日期目录不一致 |
+| `idea.year_dir_mismatch` | 年份目录与 `date` 的年份不一致 |
+| `idea.status_invalid` | 状态不在 `status_values` |
+| `idea.tags_invalid` | `tags` 不是字符串列表 |
+| `idea.heading_missing` | 缺少四个必需二级标题之一 |
+| `idea.placeholder_remaining` | 模板 HTML 注释或 `id: ABCDEFGH` 未替换 |
+
+空正文、`暂无`、`目前说不清，因为……` 都是合法内容，不产生结构 finding。
+
+### 5.3 tasks 类型规则
+
+`taskscheck` 是独立二进制，规则不进入 Rego。`tasks.md` 用 `type: tasks`、`spec: ./spec.md` 和 `spec_sha256` 钉住同目录的 Spec；`Approved` / `Implemented` 的 Spec 必须有 tasks.md，`Draft` / `In Review` 可选。
+
+| 规则组 | 规则 ID |
+|---|---|
+| 文件与生命周期 | `tasks.missing_file`、`tasks.orphan_tasks`、`tasks.invalid_frontmatter`、`tasks.parse_error` |
+| Spec 关联 | `tasks.missing_spec`、`tasks.wrong_spec_path`、`tasks.stale_plan`、`spec.no_goals` |
+| 任务图 | `tasks.invalid_task_id`、`tasks.duplicate_id`、`tasks.unknown_dependency`、`tasks.self_dependency`、`tasks.dependency_cycle` |
+| 覆盖 | `tasks.empty_coverage`、`tasks.unknown_coverage`、`tasks.goal_not_dedicated`、`tasks.uncovered_requirement`（warning） |
+| 完成标准 | `tasks.empty_done_criterion`、`tasks.banned_done_criterion`、`tasks.empty_verify`、`tasks.verify_not_executable` |
+| 写入 | `tasks.invalid_write_path`、`tasks.write_conflict`、`tasks.case_collision`（warning） |
+| 不适用 | `tasks.invalid_not_applicable` |
+
+退出码：0 干净或 `-phase 0`；1 阻断 finding；2 工具/解析错误（包括 `tasks.no_specs`、`tasks.invalid_spec_flag`、`tasks.usage`、`spec.no_goals`）。
 
 ## 6. 安全与信任边界
 
@@ -228,5 +299,9 @@ mdstandards -root . -policy ./policy -phase 1 -format json
 | D7 | CI 与 hook 分开算延迟预算 |
 | D8 | 继续独立 OPA 方案，不扩展既有 PDS 校验器 |
 | D9/D10 | 状态词汇取 `Approved` + `Published`，逐字匹配 |
+| D11 | 仓库级 `.mdstandards.json` 只声明 type；globs 只在 policy 档案里 |
+| D12 | `idea` 结构错误阻断，内容评分只诊断；空正文/`暂无` 合法 |
+| D13 | 内容评分复用 `qualitycheck`，增加 `guess` 字段和报告标题 flag；评分引擎不重写 |
 | D11 | 策略从 `HEAD` 读，策略文件受 CODEOWNERS 保护 |
 | D12 | `..` 解析后仍在仓库内则接受，越界才违规 |
+| D14 | tasks 用独立 `taskscheck`；Goal 硬覆盖、REQ 只报告；`tasks.md` 用 `spec_sha256` 钉住 `spec.md` |

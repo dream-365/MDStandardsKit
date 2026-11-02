@@ -78,6 +78,7 @@ type ItemFinding struct {
 	Rationale string     `json:"rationale"`
 	Missing   string     `json:"missing"`
 	NaReason  string     `json:"na_reason"`
+	Guess     string     `json:"guess,omitempty"`
 }
 
 type Evidence struct {
@@ -98,6 +99,7 @@ type ItemResult struct {
 	Rationale     string
 	Missing       string
 	NaReason      string
+	Guess         string
 	Failures      []string
 }
 
@@ -121,6 +123,8 @@ type AuditResult struct {
 	Diagnostic    float64
 	Failures      []string
 	Notes         []string
+	ReportTitle   string
+	TargetLabel   string
 }
 
 func loadFindings(path string) (Findings, error) {
@@ -357,6 +361,7 @@ func Audit(rubricPath, findingsPath, docPath, writerSession string) (AuditResult
 				Rationale:     finding.Rationale,
 				Missing:       finding.Missing,
 				NaReason:      finding.NaReason,
+				Guess:         finding.Guess,
 			}
 			if !ok {
 				ir.Failures = append(ir.Failures, "missing finding")

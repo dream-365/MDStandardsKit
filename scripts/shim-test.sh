@@ -23,7 +23,8 @@ case "$(uname -s):$(uname -m)" in
 esac
 printf '#!/bin/sh\necho "FAKE_MDS $*"\n' >"$release/mdstandards-$platform"
 printf '#!/bin/sh\necho "FAKE_QC $*"\n' >"$release/qualitycheck-$platform"
-chmod +x "$release/mdstandards-$platform" "$release/qualitycheck-$platform"
+printf '#!/bin/sh\necho "FAKE_TC $*"\n' >"$release/taskscheck-$platform"
+chmod +x "$release/mdstandards-$platform" "$release/qualitycheck-$platform" "$release/taskscheck-$platform"
 
 if command -v sha256sum >/dev/null 2>&1; then
   hash() { sha256sum "$1" | awk '{print $1}'; }
@@ -35,6 +36,7 @@ write_checksums() {
   {
     printf '%s  mdstandards-%s\n' "$(hash "$release/mdstandards-$platform")" "$platform"
     printf '%s  qualitycheck-%s\n' "$(hash "$release/qualitycheck-$platform")" "$platform"
+    printf '%s  taskscheck-%s\n' "$(hash "$release/taskscheck-$platform")" "$platform"
   } >"$release/checksums.txt"
 }
 write_checksums
@@ -51,6 +53,11 @@ printf '%s\n' "$out" | grep -q '^FAKE_MDS' || fail "download path did not execut
 out=$(XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="file://$work/missing" "$tool" mdstandards --version) ||
   fail "cache hit exited non-zero"
 printf '%s\n' "$out" | grep -q '^FAKE_MDS' || fail "cache hit did not use the cached asset"
+
+# taskscheck dispatches through the same download path
+out=$(XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="file://$release" "$tool" taskscheck --version) ||
+  fail "taskscheck download path exited non-zero"
+printf '%s\n' "$out" | grep -q '^FAKE_TC' || fail "taskscheck download path did not execute the downloaded asset"
 
 # 3. checksum mismatch fails closed and never executes
 printf 'deadbeef  mdstandards-%s\n' "$platform" >"$release/checksums.txt"

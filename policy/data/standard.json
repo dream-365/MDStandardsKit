@@ -3,6 +3,23 @@
     "standard_version": "1",
     "governed_globs": ["docs/specs/**/*.md", "docs/architecture/**/*.md", "adr/**/*.md"],
     "dependable_statuses": ["Approved", "Published"],
-    "identity": "repo_relative_path"
+    "identity": "repo_relative_path",
+    "document_types": {
+      "idea": {
+        "globs": ["20*/**/*.md"],
+        "required_fields": ["id", "title", "date", "tags", "status"],
+        "status_values": ["萌芽", "探索中", "已落地", "搁置"],
+        "required_headings": ["一句话描述", "想法", "为什么有意思", "下一步"],
+        "id_pattern": "^[A-Z]{8}$",
+        "date_field": "date",
+        "graph": false,
+        "placeholder_markers": [
+          "<!-- 一句话说清楚这个想法是什么。写不出来就说明还没想清楚。 -->",
+          "<!-- 展开说说：它是什么样子的？怎么运作？ -->",
+          "<!-- 它解决了什么问题？或者只是让你好奇？ -->",
+          "<!-- 如果想推进，最小的一步是什么？ -->"
+        ]
+      }
+    }
   }
 }
