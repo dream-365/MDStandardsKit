@@ -2,7 +2,7 @@
 
 - Target: `docs/specs/SPEC-001-mdstandards/spec.md`
 - Rubric: 1.0.0 (`acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947`)
-- Target SHA-256: `db8c9985081365e918a49876a7314c3a07f072cdcfc19415156721be0b86804f`
+- Target SHA-256: `bb8d4081ca8b4738feeeea3a8c22353dabf47fdeb466803ef4593b8b4d0f1d56`
 - Reviewer session: `reviewer-smoke`
 
 **Headline score (core): 0.0**  |  Diagnostic score (all): 0.0

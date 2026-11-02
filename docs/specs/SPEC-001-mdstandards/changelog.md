@@ -1,12 +1,25 @@
 ---
 type: changelog
-status: In Review
+status: Implemented
 owner: alang
 depends_on: []
-updated_at: 2026-11-02
+updated_at: 2026-11-03
 ---
 
 # Changelog: SPEC-001 MDStandardsKit 元数据闸门
+
+## [2026-11-03] - 实现收口与 NFR-002 性能预算降级
+
+- **修改类型**: Changed
+- **影响范围**: G3、G5、3.3 核心数据流、4.1 术语、4.6 退出码、REQ-031/033、NFR-001/002/003/005/008/009、验收表；新增 `tasks.md` 与独立质量复审
+- **变更原因**: 代码与 v0.2.0 发布已落地，但 spec 仍停在 `In Review`；NFR-002 未实现，多项 REQ/NFR 无测试，且缺少 `tasks.md`。
+- **具体内容**:
+  - `main.go` 增加 phase 1 性能预算：参数校验后到规则求值与排序完成超过 2 秒且受管匹配文档 ≤200 时，打印警告并降级为只警告；phase 2 不降级，覆盖断言与策略加载错误仍退出 2。p95 由 opt-in 基准测量。
+  - `evalPolicy` 接受 `context.Context`，超时路径可用已过期 deadline 测试，不实际等待 10 秒。
+  - 新增 extract/status/coverage/policyhead/report/json/eval/perf 测试，覆盖 REQ-004/006/007/011/013/020/021/023/033/041/042/043/050/051/052 与 NFR-001/002/003/005/006/008/009。
+  - NFR-001 实测 1000 篇 38ms；NFR-002 实测 200 篇 p95 9ms（2026-11-03，Apple M2 / macOS 27.0.1 / arm64）。
+  - 新增 `tasks.md`；验收表按新增测试更新，NFR-007 仍为部分覆盖。
+- **状态变更**: `spec.md` 与 `changelog.md` 的 `status` 由 `In Review` 改为 `Implemented`；`tasks.md` 为 `Done`。
 
 ## [2026-11-02] - 新增 taskscheck（独立执行拆解闸门）
 
