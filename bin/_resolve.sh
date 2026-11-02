@@ -9,7 +9,7 @@ fi
 shift
 
 case $_tool in
-  mdstandards|qualitycheck) ;;
+  mdstandards|qualitycheck|taskscheck) ;;
   *)
     echo "doc-writer toolchain: unknown tool '$_tool'" >&2
     exit 2
@@ -126,6 +126,7 @@ fi
 case $_tool in
   mdstandards) _pkg="." ;;
   qualitycheck) _pkg="./tools/qualitycheck" ;;
+  taskscheck) _pkg="./tools/taskscheck" ;;
 esac
 
 _tmp=$(mktemp "$_cache/.build.XXXXXX") || {
