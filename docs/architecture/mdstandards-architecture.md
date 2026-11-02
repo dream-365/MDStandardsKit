@@ -69,6 +69,10 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 | `policy/*.rego` | spec 两条图规则 + idea 结构规则 + 载入失败守卫 |
 | `policy/data/standard.json` | 唯一事实来源；`document_types` 存放类型档案 |
 
+### 3.1 taskscheck（独立二进制）
+
+`taskscheck` 不并入 mdstandards。它读取 `docs/specs/**/spec.md` 与同目录 `tasks.md`，校验任务 ID、依赖无环、Goal 专用覆盖、写冲突、完成标准与 `spec_sha256`。mdstandards 的 0/1/2 与 `-dump-corpus` 契约不变。边界原因见 `docs/designs/tasks-boundary-spike.md`：`document_types` 是仓库级配置，tasks 与 spec 需要在同一仓库共存。
+
 ## 4. 数据契约
 
 ### 4.1 standard.json
@@ -213,6 +217,22 @@ type 未知或含未知键时，CLI 在求值前 exit 2。
 
 空正文、`暂无`、`目前说不清，因为……` 都是合法内容，不产生结构 finding。
 
+### 5.3 tasks 类型规则
+
+`taskscheck` 是独立二进制，规则不进入 Rego。`tasks.md` 用 `type: tasks`、`spec: ./spec.md` 和 `spec_sha256` 钉住同目录的 Spec；`Approved` / `Implemented` 的 Spec 必须有 tasks.md，`Draft` / `In Review` 可选。
+
+| 规则组 | 规则 ID |
+|---|---|
+| 文件与生命周期 | `tasks.missing_file`、`tasks.orphan_tasks`、`tasks.invalid_frontmatter`、`tasks.parse_error` |
+| Spec 关联 | `tasks.missing_spec`、`tasks.wrong_spec_path`、`tasks.stale_plan`、`spec.no_goals` |
+| 任务图 | `tasks.invalid_task_id`、`tasks.duplicate_id`、`tasks.unknown_dependency`、`tasks.self_dependency`、`tasks.dependency_cycle` |
+| 覆盖 | `tasks.empty_coverage`、`tasks.unknown_coverage`、`tasks.goal_not_dedicated`、`tasks.uncovered_requirement`（warning） |
+| 完成标准 | `tasks.empty_done_criterion`、`tasks.banned_done_criterion`、`tasks.empty_verify`、`tasks.verify_not_executable` |
+| 写入 | `tasks.invalid_write_path`、`tasks.write_conflict`、`tasks.case_collision`（warning） |
+| 不适用 | `tasks.invalid_not_applicable` |
+
+退出码：0 干净或 `-phase 0`；1 阻断 finding；2 工具/解析错误（包括 `tasks.no_specs`、`tasks.invalid_spec_flag`、`tasks.usage`、`spec.no_goals`）。
+
 ## 6. 安全与信任边界
 
 闸门要拦的对象和闸门本身在同一个工作区里。因此：
@@ -284,3 +304,4 @@ mdstandards -root . -policy ./policy -phase 1 -format json
 | D13 | 内容评分复用 `qualitycheck`，增加 `guess` 字段和报告标题 flag；评分引擎不重写 |
 | D11 | 策略从 `HEAD` 读，策略文件受 CODEOWNERS 保护 |
 | D12 | `..` 解析后仍在仓库内则接受，越界才违规 |
+| D14 | tasks 用独立 `taskscheck`；Goal 硬覆盖、REQ 只报告；`tasks.md` 用 `spec_sha256` 钉住 `spec.md` |

@@ -63,7 +63,7 @@ jobs:
         with:
           go-version: "1.27.1"
 
-      - name: build both tools
+      - name: build all tools
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -75,6 +75,7 @@ jobs:
           ldflags="-s -w -X main.version=$VERSION -X main.policyHash=$POLICY_HASH"
           go build -trimpath -ldflags="$ldflags" -o "mdstandards-$GOOS-$GOARCH" .
           go build -trimpath -ldflags="$ldflags" -o "qualitycheck-$GOOS-$GOARCH" ./tools/qualitycheck
+          go build -trimpath -ldflags="$ldflags" -o "taskscheck-$GOOS-$GOARCH" ./tools/taskscheck
 
       - uses: actions/upload-artifact@v4
         with:
@@ -82,6 +83,7 @@ jobs:
           path: |
             mdstandards-${{ matrix.goos }}-${{ matrix.goarch }}
             qualitycheck-${{ matrix.goos }}-${{ matrix.goarch }}
+            taskscheck-${{ matrix.goos }}-${{ matrix.goarch }}
 
   checksums:
     needs: build
@@ -165,6 +167,21 @@ jobs:
           fi
           printf '%s\n' "$out"
           printf '%s\n' "$out" | grep -q "scanned 2 documents, evaluated 0 edges"
+
+      - name: taskscheck smoke
+        env:
+          WITH_GO: ${{ matrix.with_go }}
+          BASE_URL: file://${{ github.workspace }}/release
+        run: |
+          set -eu
+          cache=$(mktemp -d)
+          if [ "$WITH_GO" = "true" ]; then
+            env XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 \
+              ./bin/doc-writer-tool taskscheck -root . -phase 1 -format table
+          else
+            env PATH=/usr/bin:/bin XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="$BASE_URL" \
+              ./bin/doc-writer-tool taskscheck -root . -phase 1 -format table
+          fi
 
   publish:
     needs: smoke
