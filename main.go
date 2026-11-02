@@ -15,10 +15,24 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 )
 
+const agentHookMaxDocs = 200
+
 var (
 	version    = "dev"
 	policyHash = "unknown"
+
+	// Test seams: production uses wall-clock time and the documented budgets.
+	elapsedSince      = time.Since
+	agentHookBudget   = 2 * time.Second
+	policyEvalTimeout = 10 * time.Second
 )
+
+// performanceOverBudget reports whether an Agent-hook-sized corpus exceeded the
+// per-run time budget. A single process cannot measure a p95; this guard only
+// catches the current run. The p95 target is measured by the opt-in benchmark.
+func performanceOverBudget(elapsed time.Duration, matched int) bool {
+	return matched > 0 && matched <= agentHookMaxDocs && elapsed > agentHookBudget
+}
 
 type Standard struct {
 	StandardVersion    string                  `json:"standard_version"`
@@ -77,6 +91,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "phase must be 0, 1 or 2")
 		return 2
 	}
+
+	// The budget covers policy loading, extraction, coverage assertions, policy
+	// evaluation and sorting. Report rendering and baseline filtering happen
+	// after the measurement.
+	checkStart := time.Now()
 
 	rootAbs, err := filepath.Abs(*root)
 	if err != nil {
@@ -179,12 +198,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	findings, err := evalPolicy(policyDir, corpus)
+	findings, err := evalPolicy(context.Background(), policyDir, corpus)
 	if err != nil {
 		fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
 		return 2
 	}
 	sortFindings(findings)
+
+	elapsed := elapsedSince(checkStart)
+	overBudget := performanceOverBudget(elapsed, corpus.Stats.Matched)
+	performanceDegrade := overBudget && *phase == 1
+	if overBudget {
+		action := "this phase does not degrade"
+		if *phase == 1 {
+			action = "phase 1 degrades to warning-only"
+		}
+		fmt.Fprintf(stderr,
+			"warning: performance budget exceeded: %s for %d matched documents (limit %s); %s\n",
+			elapsed.Round(time.Millisecond), corpus.Stats.Matched, agentHookBudget, action)
+	}
 
 	rep := Report{
 		SchemaVersion: findingsSchemaVersion,
@@ -193,7 +225,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		Stats:         corpus.Stats,
 	}
 
-	blocking := *phase >= 1 && !dirtyPolicy
+	blocking := *phase >= 1 && !dirtyPolicy && !performanceDegrade
 	if blocking && *baselinePath != "" {
 		base, err := loadBaseline(*baselinePath)
 		if err != nil {
@@ -282,9 +314,12 @@ func loadRepoConfig(root string) (string, error) {
 	return c.Type, nil
 }
 
-func evalPolicy(policyDir string, corpus Corpus) ([]Finding, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func evalPolicy(parent context.Context, policyDir string, corpus Corpus) ([]Finding, error) {
+	ctx, cancel := context.WithTimeout(parent, policyEvalTimeout)
 	defer cancel()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	paths, err := filepath.Glob(filepath.Join(policyDir, "*.rego"))
 	if err != nil {
@@ -301,6 +336,9 @@ func evalPolicy(policyDir string, corpus Corpus) ([]Finding, error) {
 		rego.Input(corpus),
 	).PrepareForEval(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	rs, err := q.Eval(ctx)

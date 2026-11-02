@@ -1,10 +1,10 @@
 ---
 type: spec
-status: In Review
+status: Implemented
 owner: alang
 depends_on:
   - docs/architecture/mdstandards-architecture.md
-updated_at: 2026-11-02
+updated_at: 2026-11-03
 ---
 
 # MDStandardsKit idea 类型 技术方案
@@ -13,7 +13,7 @@ updated_at: 2026-11-02
 | --- | --- |
 | 标题 | MDStandardsKit idea 类型 技术方案 |
 | 主笔 | alang |
-| 评审人 | 独立 agent 冷读 + `/plan-eng-review` |
+| 评审人 | 独立 agent 冷读 + `/plan-eng-review`；2026-11-03 实现收口后独立质量复审 |
 | 创建日期 | 2026-11-02 |
 | 目标版本 | v0.2.0 |
 | 关联资源 | [架构](../../architecture/mdstandards-architecture.md)、[设计记录](../../designs/idea-document-type.md) |
@@ -56,7 +56,7 @@ updated_at: 2026-11-02
 
 - **G1 类型声明**：仓库根 `.mdstandards.json` 声明 `{"type":"idea"}`；缺失、损坏、未知 type、未知键都 exit 2。验收：`TestIdeaConfigFailsClosed`、`TestIdeaValidRepo`。
 - **G2 结构规则**：ID、日期、目录、状态、tags、标题、占位符、路径形状各有一条独立规则。验收：`TestIdeaStructuralFindings`、`TestIdeaDuplicateID`。
-- **G3 记录不误伤**：空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。验收：`TestIdeaValidRepo` 与真实 5 篇语料 phase 1 通过。
+- **G3 记录不误伤**：空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。验收：`TestIdeaValidRepo` 与真实 ideas 语料（2026-11-03 实测 9 篇）phase 1 通过。
 - **G4 内容评分**：rubric 四个 core 项计算「推进就绪度」，成熟度和「非显而易见」只做诊断；独立 reviewer 先盲读再评分；`qualitycheck` 复算分数并验证逐字证据。验收：`-validate-rubric`、万花筒冒烟报告。
 - **G5 spec 不回归**：spec 的 `-dump-corpus` 输出逐字节不变；`make check` 全绿。验收：`TestSpecDumpCorpusGolden`、`make check`。
 
@@ -108,9 +108,32 @@ flowchart LR
 - 单 `main` 包，不拆 `cmd/` + `internal/`。
 - 不新增运行时依赖。
 
+### 3.4 关键选型与约束
+
+- **类型配置 + 专用 Rego**：类型由仓库级 `.mdstandards.json` 声明，规则集中在 `policy/idea.rego`；spec 的规则、退出码与 `-dump-corpus` 契约不变。方案对比见第 7 章。
+- **结构硬闸门与内容诊断分离**：结构错误阻断记录；内容评分只诊断，不阻止入库。
+- **配置 fail-closed**：`.mdstandards.json` 使用 `DisallowUnknownFields`；缺失、损坏、未知 type 或未知键都退出 2。
+- **复用评分引擎**：idea 复用 `qualitycheck`，只增加 `guess` 字段与标题/标签参数，不复制评分实现。
+- **单二进制、单主包**：不拆 `cmd/` + `internal/`，不新增运行时依赖。
+
 ## 4. 详细设计
 
-### 4.1 数据模型
+### 4.1 术语与前置条件
+
+| 术语 | 含义 |
+|---|---|
+| idea 仓库 | 根目录 `.mdstandards.json` 声明 `{"type":"idea"}` 的想法库 |
+| 结构 finding | `policy/idea.rego` 产出的规则命中，阻断记录 |
+| 内容评分 | 独立 reviewer 按 idea rubric 给出的推进就绪度，只诊断 |
+| 盲读 | reviewer 先只看 title + 一句话描述并写 `guess`，再读正文 |
+
+前置条件：`.mdstandards.json` 存在且可解析；`standard.json` 的 `document_types.idea` 含 `globs`；文件路径符合 `YYYY/YYYY-MM-DD/<slug>.md`。
+
+### 4.2 结构规则
+
+规则见架构文档 §5.2。每条规则独立命中并带稳定的 rule ID：ID 格式与唯一性、日期格式与真实性、路径形状与目录一致性、状态枚举、tags 类型、标题非空、占位符残留、四个必需章节。
+
+### 4.3 数据模型与契约
 
 idea 文档在 corpus 里额外带：
 
@@ -125,15 +148,24 @@ idea 文档在 corpus 里额外带：
 
 这些字段都带 `omitempty`，spec 文档不填充。
 
-### 4.2 命令行
+### 4.4 接口与协议
 
 ```bash
 mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format table|json
 ```
 
-`-policy` 相对当前工作目录解析；idea 仓库必须显式传插件的 policy 目录，或设置 `MDSTANDARDS_POLICY_DIR`。
+`-policy` 相对当前工作目录解析；idea 仓库必须显式传插件的 policy 目录，或设置 `MDSTANDARDS_POLICY_DIR`。输出沿用 `table|json|github`；退出码见 4.6。
 
-### 4.3 规则与退出码
+### 4.5 核心流程与时序
+
+1. 读取仓库根 `.mdstandards.json`，解析 `type=idea`。
+2. 从 `standard.json` 取出 `document_types.idea` 的 globs 与结构配置。
+3. 遍历 globs，解析 frontmatter 与正文标题，产出 document 或 extract_error。
+4. 覆盖断言：零受管文档、`phase >= 1` 的零解析文档都退出 2；idea 类型不要求依赖边。
+5. `policy/idea.rego` 求值，产出结构 findings。
+6. `phase 1` 有 finding 退出 1；否则退出 0。内容评分在记录流程之外异步进行。
+
+### 4.6 异常处理与错误码
 
 规则见架构文档 §5.2。退出码：
 
@@ -141,16 +173,16 @@ mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format t
 |---|---|
 | 0 | 干净，或 phase 0 |
 | 1 | phase 1 有结构 finding |
-| 2 | 配置/策略加载失败、未知 type、零受管文档、解析错误 |
+| 2 | 配置/策略加载失败、未知 type、零受管文档、零解析文档、解析错误 |
 
-### 4.4 日期与路径
+### 4.7 日期与路径
 
 - 路径必须恰好三层：`YYYY/YYYY-MM-DD/<slug>.md`。
 - 年份目录必须是 `20xx`，日期目录必须是 `YYYY-MM-DD`。
 - frontmatter `date` 必须等于日期目录，年份必须等于年份目录。
 - `date` 可以是 YAML 字符串，也可能被 YAML 解析成 `time.Time`；两种都归一化为 `YYYY-MM-DD`。非零时钟的 datetime 报 `idea.date_invalid`。
 
-### 4.5 内容评分
+### 4.8 内容评分
 
 - rubric：`skills/idea-writer/idea/quality/rubric.v1.yaml`。
 - core 项：`claim.standalone`(w2)、`problem.trigger`(w2)、`next.testable`(w3)、`next.bounded`(w1)。
@@ -161,18 +193,36 @@ mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format t
 ## 5. 非功能性需求
 
 - **NFR-1 确定性**：同一语料、同一 policy 的 JSON 输出字节稳定；spec `-dump-corpus` 与改造前逐字节一致。
-- **NFR-2 性能**：5 篇 idea 的 phase 1 在 1 秒内完成；单文件上限沿用 1 MiB。
+- **NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。
 - **NFR-3 安全**：`.mdstandards.json` 使用 `DisallowUnknownFields`；配置错误 fail closed；frontmatter 仍按不可信输入处理。
 - **NFR-4 可观测性**：每条 finding 带 `rule`、`document`、`target`、`message`；内容报告带 rubric 版本、目标 SHA-256、reviewer 会话。
 - **NFR-5 兼容性**：不新增运行时依赖；插件 binary 与 policy 同版本发布。
 
 ## 6. 上线与迁移计划
 
+### 6.1 发布与灰度
+
 1. 在 `~/Workspace/ideas` 增加 `.mdstandards.json`。
 2. `scripts/new` 在工具可用时跑 phase 0 检查；不可用只打印提示。
-3. 插件版本升到 `0.2.0`，release tag 必须与 `plugin.json` 一致。
-4. 发布冒烟：对 `testdata/idea-repo` 跑 phase 1；对真实 ideas 仓库跑 phase 1。
-5. 回滚：移除 `.mdstandards.json` 或回退插件版本；spec 行为不受影响。
+3. 插件版本升到 `0.2.0`，release tag 必须与 `plugin.json` 一致；先对 `testdata/idea-repo` 冒烟，再对真实 ideas 仓库灰度。
+
+### 6.2 数据迁移与兼容性
+
+- 不迁移既有想法文件；新增配置即可启用结构闸门。
+- spec 的规则、退出码与 `-dump-corpus` 字节输出保持不变；idea 规则只在 `type=idea` 仓库生效。
+- 不新增运行时依赖；插件 binary 与 policy 同版本发布。
+
+### 6.3 上线验证与冒烟
+
+1. `testdata/idea-repo` phase 1 退出 0。
+2. 真实 ideas 仓库 phase 1 退出 0（2026-11-03 为 8 篇）。
+3. `make check` 全绿，含 spec golden 与插件 shim 测试。
+
+### 6.4 回滚与熔断
+
+- 回滚：移除 `.mdstandards.json` 或回退插件版本；spec 行为不受影响。
+- 熔断触发：真实 ideas 仓库出现结构误报、插件 shim 或 release 冒烟失败、spec golden 回归。
+- 触发后停止灰度，回退到上一插件版本；内容评分产物不阻断入库，不参与回滚判定。
 
 ## 7. 替代方案与权衡
 
