@@ -24,6 +24,15 @@
 - [ ] 第 6 章有回滚触发条件。
 - [ ] 没有具体实现代码、测试日志或偶发报错堆砌。
 
+## 执行拆解
+
+- [ ] `Approved` / `Implemented` 的 Spec 同目录有 `tasks.md`；`Draft` / `In Review` 可选。
+- [ ] frontmatter 有 `type: tasks`、`status`、`owner`、`depends_on: []`、`spec`、`spec_sha256`、`updated_at`。
+- [ ] 每个 Goal 至少一个专用任务；每个任务至少覆盖一个 Goal/REQ。
+- [ ] 依赖可解、无自环；两个无依赖路径的任务不写同一路径。
+- [ ] 完成标准可观察；验证是命令、测试 ID 或产物路径。
+- [ ] `taskscheck -spec <spec> -phase 1` 退出 0，或每条 finding 已修复。
+
 ## 规范
 
 - [ ] 目录、标题、正文没有 `M<N>` 或里程碑名称。

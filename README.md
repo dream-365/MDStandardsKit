@@ -23,7 +23,7 @@ claude plugin marketplace add dream-365/MDStandardsKit#v0.2.0 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
-插件自带 `mdstandards` 和 `qualitycheck` 的下载与构建兜底：支持平台首次运行会从 Release 下载并校验 sha256，失败时用 Go 1.27.1+ 本地构建。
+插件自带 `mdstandards`、`qualitycheck` 和 `taskscheck` 的下载与构建兜底：支持平台首次运行会从 Release 下载并校验 sha256，失败时用 Go 1.27.1+ 本地构建。
 
 ## 快速开始
 
@@ -84,6 +84,29 @@ make build
 空正文、`暂无`、`目前说不清，因为……` 都是允许的。内容评分用 `skills/idea-writer/` 的 rubric，
 报告写到 `docs/quality/ideas/<id>/`，不进入受管文档。
 
+## 执行拆解 tasks.md
+
+`Approved` / `Implemented` 的 Spec 需要在同目录提交 `tasks.md`；`Draft` / `In Review` 可选。它从 `spec.md` 派生，用依赖表达顺序，不复制架构。
+
+```yaml
+---
+type: tasks
+status: In Progress
+owner: alang
+depends_on: []
+spec: ./spec.md
+spec_sha256: "<spec.md 的 sha256>"
+updated_at: 2026-11-02
+---
+```
+
+任务表固定七列：ID、任务、覆盖、依赖、写入、完成标准、验证。`taskscheck` 检查 ID 唯一、依赖可解无环、每个 Goal 有专用任务、写冲突、完成标准可执行、spec 哈希新鲜；REQ 覆盖只报告。
+
+```bash
+./taskscheck -root . -phase 1 -format table
+./taskscheck -spec docs/specs/SPEC-002-idea-type/spec.md -phase 1
+```
+
 ## 文档格式
 
 受管文档需要 YAML frontmatter：
@@ -124,6 +147,7 @@ depends_on:
 ├── testdata/example-repo/   可运行的 Spec 示例语料
 ├── testdata/idea-repo/      可运行的 idea 示例语料
 ├── tools/qualitycheck/      Spec / idea 内容质量评分卡审计器
+├── tools/taskscheck/         tasks.md 执行拆解闸门
 ├── docs/
 │   ├── architecture/        架构文档
 │   ├── designs/             设计记录
@@ -144,6 +168,8 @@ depends_on:
 - [doc-writer 插件分发设计](docs/designs/doc-writer-plugin-distribution.md)
 - [Spec 内容质量评分卡设计](docs/designs/spec-quality-scorecard.md)
 - [idea 类型设计](docs/designs/idea-document-type.md)
+- [执行拆解设计](docs/designs/spec-execution-tasks.md)
+- [tasks 边界 spike](docs/designs/tasks-boundary-spike.md)
 - [质量报告索引](docs/quality/README.md)
 
 ## 已知限制
@@ -153,13 +179,16 @@ depends_on:
 - 不检测循环引用，与 PDS-STD-004 §8.5.6 存在偏离。
 - Agent hook 未安装时是静默无操作，当前无检测手段。
 - 插件分发只支持 darwin/arm64、darwin/amd64、linux/amd64、linux/arm64；Windows 不在 v0.1 范围内。
+- `taskscheck` v1 只硬覆盖 Goal，REQ 覆盖只报告；没有 baseline；`Draft` / `In Review` 的 Spec 不强制 `tasks.md`。
+- `document_types` 是仓库级配置；tasks 由独立二进制检查，不并入 mdstandards 的类型系统。
 
 ## 命令
 
 ```bash
-make build   # 构建
-make test    # go test ./...
-make vet     # go vet ./...
-make check   # vet + test + 对自身仓库自检
-make clean   # 删除二进制
+make build       # 构建 mdstandards
+make taskscheck  # 构建 taskscheck
+make test        # go test ./...
+make vet         # go vet ./...
+make check       # vet + test + mdstandards 与 taskscheck 自检
+make clean       # 删除二进制
 ```

@@ -6,7 +6,7 @@
 
 - 一个 Spec 一个目录：`docs/specs/SPEC-<三位数字>-<kebab>/`。
 - 目录名和标题只描述能力或领域，不出现 `M<N>`、里程碑编号或里程碑名称。
-- 固定文件：`spec.md`、`changelog.md`。
+- 固定文件：`spec.md`、`changelog.md`；`Approved` / `Implemented` 时加 `tasks.md`。
 - 附属资源：`assets/`（架构图、流程图、截图，禁止外部图床）、`schemas/` 或 `examples/`（JSON Schema、Protobuf、示例数据）。
 - 质量产物：`docs/quality/SPEC-xxx/quality-report.md` 与 `quality-findings.json`，随 Spec 提交；`docs/quality/` 不在 `governed_globs` 内。
 - 总索引：`docs/specs/README.md` 汇总编号、名称、状态与链接；新增 Spec 或状态流转时同步。
@@ -35,12 +35,22 @@ updated_at: 2026-11-01
 | --- | --- | --- |
 | Draft | 起草或征求意见 | 禁止据此写生产代码 |
 | In Review | 正式评审 | 收集意见，修正争议 |
-| Approved | 评审通过 | 准许编码，作为 SSOT |
-| Implemented | 已落地 | 当前版本生效 |
+| Approved | 评审通过 | 准许编码，作为 SSOT；必须有 `tasks.md` |
+| Implemented | 已落地 | 当前版本生效；必须有 `tasks.md` |
 | Superseded | 被新方案替代 | 归档，仅作历史记录 |
 | Deprecated | 废弃 | 归档，不再维护 |
 
 强回退：任何核心内容修改（AC、架构、Goals/Non-Goals、边界规则）提交即回退 `In Review`；大幅重写回退 `Draft`。回退到 `Approved` 之前禁止修改或合并对应生产代码。
+
+## 执行拆解
+
+`Approved` / `Implemented` 的 Spec 必须在同目录提交 `tasks.md`；`Draft` / `In Review` 可选。
+
+- `tasks.md` 从 `spec.md` 派生，不复制架构、数据模型或接口契约。
+- 任务表固定七列：ID、任务、覆盖、依赖、写入、完成标准、验证。
+- 每个 Goal 至少一个专用任务；每个任务至少覆盖一个 ID；依赖无环；无依赖路径的任务不写同一路径。
+- `spec_sha256` 钉住 `spec.md`；Spec 改动后重算。
+- 完整规则：`spec/chapters/08-execution-plan.md`；模板：`spec/tasks-template.md`；闸门：`taskscheck`。
 
 ## Changelog
 
