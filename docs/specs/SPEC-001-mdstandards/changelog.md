@@ -3,10 +3,18 @@ type: changelog
 status: In Review
 owner: alang
 depends_on: []
-updated_at: 2026-11-01
+updated_at: 2026-11-02
 ---
 
 # Changelog: SPEC-001 MDStandardsKit 元数据闸门
+
+## [2026-11-02] - 关联 SPEC-002
+
+- **修改类型**: Added（关联文档）
+- **影响范围**: 仅在 changelog 增加交叉引用；SPEC-001 的范围、规则和状态不变。
+- **变更原因**: 新增 `idea` 类型由 SPEC-002 承接，SPEC-001 仍只覆盖 `spec` 类型。
+- **具体内容**: 参见 `docs/specs/SPEC-002-idea-type/spec.md`。
+- **状态变更**: 保持 `In Review`，等待复审；未改写 SPEC-001 正文。
 
 ## [2026-11-01] - 独立评审后修订
 
