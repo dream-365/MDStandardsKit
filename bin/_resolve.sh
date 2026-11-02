@@ -133,7 +133,8 @@ _tmp=$(mktemp "$_cache/.build.XXXXXX") || {
   echo "doc-writer toolchain: mktemp failed in $_cache" >&2
   exit 2
 }
-if ! (cd "$_root" && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "$_tmp" "$_pkg"); then
+_ldflags="-s -w -X main.version=$_version"
+if ! (cd "$_root" && CGO_ENABLED=0 go build -trimpath -ldflags="$_ldflags" -o "$_tmp" "$_pkg"); then
   rm -f "$_tmp"
   echo "doc-writer toolchain: go build failed for $_tool" >&2
   exit 2
