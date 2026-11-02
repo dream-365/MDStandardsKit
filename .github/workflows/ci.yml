@@ -27,6 +27,12 @@ jobs:
       - name: self-check
         run: ./mdstandards -root . -policy ./policy -phase 1 -format github
 
+      - name: build taskscheck
+        run: go build -o taskscheck ./tools/taskscheck
+
+      - name: taskscheck
+        run: ./taskscheck -root . -phase 1 -format github
+
       - name: validate plugin manifests
         run: |
           npm i -g @anthropic-ai/claude-code@2.1.292
