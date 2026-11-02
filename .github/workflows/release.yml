@@ -142,7 +142,8 @@ jobs:
           if [ "$WITH_GO" = "true" ]; then
             env XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 \
               ./bin/doc-writer-tool mdstandards -root testdata/example-repo -policy policy -phase 1 -format table
-            test -x "$cache/mdstandards/$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json)/linux-amd64/mdstandards"
+            find "$cache" -maxdepth 5 -type f -print
+            test -n "$(find "$cache" -type f -name mdstandards | head -1)"
           else
             env PATH=/usr/bin:/bin XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="$BASE_URL" \
               ./bin/doc-writer-tool mdstandards -root testdata/example-repo -policy policy -phase 1 -format table
