@@ -4,7 +4,7 @@
   "entries": [
     {
       "target": "docs/specs/SPEC-001-mdstandards/spec.md",
-      "reference_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.json",
+      "reference_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.2026-11-02.json",
       "candidate_findings": "docs/quality/SPEC-001-mdstandards/quality-findings.second.json",
       "human_levels": {
         "bg.current_state": 1,
