@@ -8,7 +8,7 @@
     {
       "name": "doc-writer",
       "source": "./",
-      "description": "按 MDStandardsKit 规范起草、修订和检查技术 Spec。"
+      "description": "按 MDStandardsKit 规范起草、修订和检查技术 Spec 与 idea。"
     }
   ]
 }

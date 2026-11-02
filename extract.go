@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
 	"gopkg.in/yaml.v3"
@@ -20,6 +21,25 @@ type Document struct {
 	Status    string   `json:"status,omitempty"`
 	Owner     string   `json:"owner,omitempty"`
 	DependsOn []string `json:"depends_on"`
+
+	// Idea-only facts. They stay empty for spec documents so the
+	// -dump-corpus output for the existing corpus is unchanged.
+	ID          string    `json:"id,omitempty"`
+	Title       string    `json:"title,omitempty"`
+	Date        string    `json:"date,omitempty"`
+	Tags        []string  `json:"tags,omitempty"`
+	Sections    []Section `json:"sections,omitempty"`
+	Missing     []string  `json:"missing,omitempty"`
+	DateInvalid bool      `json:"date_invalid,omitempty"`
+	TagsInvalid bool      `json:"tags_invalid,omitempty"`
+}
+
+type Section struct {
+	Title       string `json:"title"`
+	Level       int    `json:"level"`
+	BodyChars   int    `json:"body_chars"`
+	Empty       bool   `json:"empty"`
+	Placeholder bool   `json:"placeholder,omitempty"`
 }
 
 type ExtractError struct {
@@ -37,12 +57,13 @@ type Corpus struct {
 	Documents     []Document     `json:"documents"`
 	ExtractErrors []ExtractError `json:"extract_errors"`
 	Stats         Stats          `json:"stats"`
+	DocumentType  string         `json:"document_type,omitempty"`
 }
 
 // Extract walks every governed glob and turns matching files into a corpus.
 // Every governed file must produce either a document or an extract error; a
 // file is never silently dropped (design doc:131).
-func Extract(root string, governed []string) (Corpus, error) {
+func Extract(root string, governed []string, docType string, profile DocumentType) (Corpus, error) {
 	c := Corpus{Documents: []Document{}, ExtractErrors: []ExtractError{}}
 	fsys := os.DirFS(root)
 	seen := make(map[string]bool)
@@ -66,7 +87,7 @@ func Extract(root string, governed []string) (Corpus, error) {
 			seen[np] = true
 			c.Stats.Matched++
 
-			doc, err := readDocument(fsys, np)
+			doc, err := readDocument(fsys, np, docType, profile)
 			if err != nil {
 				c.ExtractErrors = append(c.ExtractErrors, ExtractError{Path: np, Reason: err.Error()})
 				continue
@@ -82,7 +103,7 @@ func Extract(root string, governed []string) (Corpus, error) {
 	return c, nil
 }
 
-func readDocument(fsys fs.FS, path string) (Document, error) {
+func readDocument(fsys fs.FS, path, docType string, profile DocumentType) (Document, error) {
 	info, err := fs.Stat(fsys, path)
 	if err != nil {
 		return Document{}, err
@@ -98,7 +119,7 @@ func readDocument(fsys fs.FS, path string) (Document, error) {
 	if err != nil {
 		return Document{}, err
 	}
-	return documentFromMap(path, fm)
+	return documentFromMap(path, fm, bodyAfterFrontmatter(b), docType, profile)
 }
 
 func parseFrontmatter(b []byte) (map[string]any, error) {
@@ -128,7 +149,7 @@ func parseFrontmatter(b []byte) (map[string]any, error) {
 	return m, nil
 }
 
-func documentFromMap(path string, m map[string]any) (Document, error) {
+func documentFromMap(path string, m map[string]any, body, docType string, profile DocumentType) (Document, error) {
 	d := Document{Path: path, DependsOn: []string{}}
 	if v, ok := m["type"].(string); ok {
 		d.Type = v
@@ -140,30 +161,209 @@ func documentFromMap(path string, m map[string]any) (Document, error) {
 		d.Owner = v
 	}
 
-	raw, ok := m["depends_on"]
-	if !ok || raw == nil {
-		return d, nil
-	}
-	items, ok := raw.([]any)
-	if !ok {
-		return Document{}, errors.New("depends_on must be a list of paths")
+	if raw, ok := m["depends_on"]; ok && raw != nil {
+		items, ok := raw.([]any)
+		if !ok {
+			return Document{}, errors.New("depends_on must be a list of paths")
+		}
+		seen := make(map[string]bool, len(items))
+		for _, item := range items {
+			s, ok := item.(string)
+			if !ok {
+				return Document{}, errors.New("depends_on entries must be strings")
+			}
+			n, err := NormalizeRepoPath(s)
+			if err != nil {
+				return Document{}, fmt.Errorf("depends_on %q: %w", s, err)
+			}
+			if seen[n] {
+				continue
+			}
+			seen[n] = true
+			d.DependsOn = append(d.DependsOn, n)
+		}
 	}
 
-	seen := make(map[string]bool, len(items))
+	if docType == "idea" {
+		if v, ok := m["id"].(string); ok {
+			d.ID = strings.TrimSpace(v)
+		}
+		if v, ok := m["title"].(string); ok {
+			d.Title = strings.TrimSpace(v)
+		}
+		if raw, ok := m["date"]; ok && raw != nil {
+			var valid bool
+			d.Date, valid = parseDate(raw)
+			if !valid {
+				d.DateInvalid = true
+			}
+		}
+		if raw, ok := m["tags"]; ok && raw != nil {
+			if tags, ok := parseTags(raw); ok {
+				d.Tags = tags
+			} else {
+				d.TagsInvalid = true
+			}
+		}
+		// title is checked by the dedicated empty-title rule; the rest come
+		// from the type profile so the extractor stays type-agnostic.
+		for _, field := range profile.RequiredFields {
+			if field == "title" {
+				continue
+			}
+			if raw, ok := m[field]; !ok || raw == nil {
+				d.Missing = appendUnique(d.Missing, field)
+			}
+		}
+		if d.ID == "" {
+			d.Missing = appendUnique(d.Missing, "id")
+		}
+		if d.Status == "" {
+			d.Missing = appendUnique(d.Missing, "status")
+		}
+		if body != "" {
+			d.Sections = parseSections(body, profile.PlaceholderMarkers)
+		}
+	}
+	return d, nil
+}
+
+func parseDate(v any) (string, bool) {
+	switch t := v.(type) {
+	case string:
+		s := strings.TrimSpace(t)
+		if _, err := time.Parse("2006-01-02", s); err != nil {
+			return s, false
+		}
+		return s, true
+	case time.Time:
+		// YAML resolves an unquoted date-only scalar to time.Time. A real
+		// datetime carries a non-zero clock and is not a date-only value.
+		if t.Hour() != 0 || t.Minute() != 0 || t.Second() != 0 || t.Nanosecond() != 0 {
+			return t.Format("2006-01-02"), false
+		}
+		return t.Format("2006-01-02"), true
+	default:
+		return "", false
+	}
+}
+
+func parseTags(v any) ([]string, bool) {
+	items, ok := v.([]any)
+	if !ok {
+		return nil, false
+	}
+	out := make([]string, 0, len(items))
 	for _, item := range items {
 		s, ok := item.(string)
 		if !ok {
-			return Document{}, errors.New("depends_on entries must be strings")
+			return nil, false
 		}
-		n, err := NormalizeRepoPath(s)
-		if err != nil {
-			return Document{}, fmt.Errorf("depends_on %q: %w", s, err)
+		out = append(out, s)
+	}
+	return out, true
+}
+
+func appendUnique(xs []string, s string) []string {
+	for _, x := range xs {
+		if x == s {
+			return xs
 		}
-		if seen[n] {
+	}
+	return append(xs, s)
+}
+
+func bodyAfterFrontmatter(b []byte) string {
+	s := strings.ReplaceAll(string(b), "\r\n", "\n")
+	if !strings.HasPrefix(s, "---\n") {
+		return ""
+	}
+	rest := s[4:]
+	idx := strings.Index(rest, "\n---")
+	if idx < 0 {
+		return ""
+	}
+	after := rest[idx+4:]
+	return strings.TrimPrefix(after, "\n")
+}
+
+func parseSections(body string, markers []string) []Section {
+	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	var sections []Section
+	var cur *Section
+	var buf []string
+	inFence := false
+	var fence string
+
+	flush := func() {
+		if cur == nil {
+			return
+		}
+		text := strings.TrimSpace(strings.Join(buf, "\n"))
+		cur.BodyChars = len([]rune(text))
+		cur.Empty = text == ""
+		for _, marker := range markers {
+			if marker != "" && strings.Contains(text, marker) {
+				cur.Placeholder = true
+				break
+			}
+		}
+		sections = append(sections, *cur)
+	}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if inFence {
+			if strings.HasPrefix(trimmed, fence) {
+				inFence = false
+				fence = ""
+			}
+			buf = append(buf, line)
 			continue
 		}
-		seen[n] = true
-		d.DependsOn = append(d.DependsOn, n)
+		if strings.HasPrefix(trimmed, "```") || strings.HasPrefix(trimmed, "~~~") {
+			inFence = true
+			if strings.HasPrefix(trimmed, "```") {
+				fence = "```"
+			} else {
+				fence = "~~~"
+			}
+			buf = append(buf, line)
+			continue
+		}
+		if level, title, ok := parseATXHeading(line); ok {
+			flush()
+			cur = &Section{Title: title, Level: level}
+			buf = nil
+			continue
+		}
+		if cur != nil {
+			buf = append(buf, line)
+		}
 	}
-	return d, nil
+	flush()
+	return sections
+}
+
+func parseATXHeading(line string) (int, string, bool) {
+	trimmed := strings.TrimLeft(line, " \t")
+	if !strings.HasPrefix(trimmed, "#") {
+		return 0, "", false
+	}
+	n := 0
+	for n < len(trimmed) && trimmed[n] == '#' {
+		n++
+	}
+	if n > 6 || n == len(trimmed) {
+		return 0, "", false
+	}
+	if trimmed[n] != ' ' && trimmed[n] != '\t' {
+		return 0, "", false
+	}
+	title := strings.TrimSpace(trimmed[n:])
+	title = strings.TrimSpace(strings.TrimRight(title, "#"))
+	if title == "" {
+		return 0, "", false
+	}
+	return n, title, true
 }

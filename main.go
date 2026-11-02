@@ -21,10 +21,29 @@ var (
 )
 
 type Standard struct {
-	StandardVersion    string   `json:"standard_version"`
-	GovernedGlobs      []string `json:"governed_globs"`
-	DependableStatuses []string `json:"dependable_statuses"`
-	Identity           string   `json:"identity"`
+	StandardVersion    string                  `json:"standard_version"`
+	GovernedGlobs      []string                `json:"governed_globs"`
+	DependableStatuses []string                `json:"dependable_statuses"`
+	Identity           string                  `json:"identity"`
+	DocumentTypes      map[string]DocumentType `json:"document_types"`
+}
+
+// DocumentType is the policy profile for a governed document type. The spec
+// type keeps using the top-level governed_globs; other types carry their own
+// globs and structural facts.
+type DocumentType struct {
+	Globs              []string `json:"globs"`
+	RequiredFields     []string `json:"required_fields"`
+	StatusValues       []string `json:"status_values"`
+	RequiredHeadings   []string `json:"required_headings"`
+	IDPattern          string   `json:"id_pattern"`
+	DateField          string   `json:"date_field"`
+	Graph              bool     `json:"graph"`
+	PlaceholderMarkers []string `json:"placeholder_markers"`
+}
+
+type repoConfig struct {
+	Type string `json:"type"`
 }
 
 type standardFile struct {
@@ -97,19 +116,47 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "policy.load_error: unsupported standard_version %q\n", std.StandardVersion)
 		return 2
 	}
-	if len(std.DependableStatuses) == 0 {
-		fmt.Fprintln(stderr, "policy.load_error: dependable_statuses is empty")
-		return 2
-	}
-	if len(std.GovernedGlobs) == 0 {
-		fmt.Fprintln(stderr, "policy.load_error: governed_globs is empty")
+
+	docType, err := loadRepoConfig(rootAbs)
+	if err != nil {
+		fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
 		return 2
 	}
 
-	corpus, err := Extract(rootAbs, std.GovernedGlobs)
+	globs := std.GovernedGlobs
+	graph := true
+	var profile DocumentType
+	if docType == "spec" {
+		if len(std.DependableStatuses) == 0 {
+			fmt.Fprintln(stderr, "policy.load_error: dependable_statuses is empty")
+			return 2
+		}
+		if len(std.GovernedGlobs) == 0 {
+			fmt.Fprintln(stderr, "policy.load_error: governed_globs is empty")
+			return 2
+		}
+	} else {
+		p, ok := std.DocumentTypes[docType]
+		if !ok {
+			fmt.Fprintf(stderr, "policy.load_error: no document type %q in standard.json\n", docType)
+			return 2
+		}
+		profile = p
+		globs = p.Globs
+		graph = p.Graph
+		if len(globs) == 0 {
+			fmt.Fprintf(stderr, "policy.load_error: document type %q has no globs\n", docType)
+			return 2
+		}
+	}
+
+	corpus, err := Extract(rootAbs, globs, docType, profile)
 	if err != nil {
 		fmt.Fprintf(stderr, "extract error: %v\n", err)
 		return 2
+	}
+	if docType != "spec" {
+		corpus.DocumentType = docType
 	}
 	if *dumpCorpus {
 		enc := json.NewEncoder(stdout)
@@ -127,7 +174,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "coverage error: no governed document parsed")
 		return 2
 	}
-	if *phase >= 1 && corpus.Stats.Edges == 0 {
+	if *phase >= 1 && graph && corpus.Stats.Edges == 0 {
 		fmt.Fprintln(stderr, "coverage error: the corpus has zero dependency edges")
 		return 2
 	}
@@ -206,6 +253,33 @@ func loadStandard(policyDir string) (Standard, error) {
 		return Standard{}, fmt.Errorf("invalid JSON: %w", err)
 	}
 	return sf.Standard, nil
+}
+
+// loadRepoConfig reads the repository-level type declaration. A missing file
+// means spec, preserving the pre-idea behavior. Malformed JSON, unknown keys,
+// an empty type, or an unknown type fail closed before extraction.
+func loadRepoConfig(root string) (string, error) {
+	b, err := os.ReadFile(filepath.Join(root, ".mdstandards.json"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "spec", nil
+		}
+		return "", err
+	}
+	dec := json.NewDecoder(strings.NewReader(string(b)))
+	dec.DisallowUnknownFields()
+	var c repoConfig
+	if err := dec.Decode(&c); err != nil {
+		return "", fmt.Errorf("invalid .mdstandards.json: %w", err)
+	}
+	var trailing any
+	if err := dec.Decode(&trailing); err != io.EOF {
+		return "", fmt.Errorf("invalid .mdstandards.json: trailing data")
+	}
+	if c.Type == "" {
+		return "", fmt.Errorf(".mdstandards.json: type is required")
+	}
+	return c.Type, nil
 }
 
 func evalPolicy(policyDir string, corpus Corpus) ([]Finding, error) {

@@ -1,5 +1,6 @@
 /mdstandards
 /qualitycheck
+/taskscheck
 *.test
 findings.json
 docs/designs/*.review.*/

@@ -28,6 +28,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	writerSession := fs.String("writer-session", "", "writer session id; required for -audit")
 	outPath := fs.String("out", "", "report output path (audit defaults to quality-report.md)")
 	referencePath := fs.String("reference", "", "reference findings JSON for -calibrate")
+	title := fs.String("title", "Spec Quality Report", "report title")
+	targetLabel := fs.String("target-label", "Target", "label for the audited document")
 	validate := fs.Bool("validate-rubric", false, "validate the rubric and exit")
 	audit := fs.Bool("audit", false, "audit findings against the document")
 	calibrate := fs.Bool("calibrate", false, "compare two independent reviewer passes")
@@ -74,6 +76,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, err)
 			return 2
 		}
+		res.ReportTitle = *title
+		res.TargetLabel = *targetLabel
 		report := RenderReport(res)
 		out := *outPath
 		if out == "" {
@@ -116,8 +120,16 @@ func run(args []string, stdout, stderr io.Writer) int {
 func RenderReport(res AuditResult) string {
 	var b strings.Builder
 	failed := len(res.Failures) > 0
-	fmt.Fprintf(&b, "# Spec Quality Report\n\n")
-	fmt.Fprintf(&b, "- Target: `%s`\n", escapeCell(res.Target))
+	title := res.ReportTitle
+	if title == "" {
+		title = "Spec Quality Report"
+	}
+	targetLabel := res.TargetLabel
+	if targetLabel == "" {
+		targetLabel = "Target"
+	}
+	fmt.Fprintf(&b, "# %s\n\n", title)
+	fmt.Fprintf(&b, "- %s: `%s`\n", targetLabel, escapeCell(res.Target))
 	fmt.Fprintf(&b, "- Rubric: %s (`%s`)\n", escapeCell(res.RubricVersion), escapeCell(res.RubricSHA256))
 	fmt.Fprintf(&b, "- Target SHA-256: `%s`\n", res.TargetSHA256)
 	fmt.Fprintf(&b, "- Reviewer session: `%s`\n\n", escapeCell(res.ReviewerID))
@@ -149,6 +161,9 @@ func RenderReport(res AuditResult) string {
 			for _, ev := range it.Evidence {
 				fmt.Fprintf(&b, "  - evidence `%s`: \"%s\"\n", escapeCell(ev.Section), escapeCell(ev.Quote))
 				fmt.Fprintf(&b, "  - normalized: \"%s\"\n", escapeCell(normalizeForMatch(ev.Quote)))
+			}
+			if it.Guess != "" {
+				fmt.Fprintf(&b, "  - blind guess: %s\n", escapeCell(it.Guess))
 			}
 			if it.Rationale != "" {
 				fmt.Fprintf(&b, "  - rationale: %s\n", escapeCell(it.Rationale))

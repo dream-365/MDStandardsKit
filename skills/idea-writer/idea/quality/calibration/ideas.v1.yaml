@@ -1,0 +1,60 @@
+version: "1.0.0"
+rubric_version: "1.0.0"
+description: >
+  Human triage labels for the five ideas in ~/Workspace/ideas as of 2026-11-02.
+  The reviewer must not see this file. Triage is the human decision the
+  headline is calibrated against: 推进 = try the next step now, 观察 = keep it
+  but do not advance yet, 搁置 = stop for now. One idea is held out; tune the
+  rubric on the other four, then score the held-out idea once.
+
+comparison:
+  metric: "advance vs not-advance"
+  positive: ["推进"]
+  negative: ["观察", "搁置"]
+  rule: >
+    The headline is 推进就绪度, so compare binary decisions: headline >= 70
+    counts as 推进; below 70 counts as 不推进 (观察 and 搁置 both mean "do not
+    advance now"). Agreement requires at least 3 of the 5 labels to match;
+    report the held-out idea separately. The three headline bands remain for
+    reporting, not for this agreement check.
+
+labels:
+  - id: SCCIZBQQ
+    title: 万花筒
+    path: 2026/2026-11-01/万花筒.md
+    triage: 观察
+    maturity: 成形
+    held_out: false
+    note: 想法清楚，但「下一步」是暂无；适合观察，不适合现在推进。
+
+  - id: JHVDDWAH
+    title: 情景式英语学习
+    path: 2026/2026-11-01/情景式英语学习.md
+    triage: 推进
+    maturity: 可推进
+    held_out: false
+    note: 下一步是拿一份真实字幕手工跑一遍，并落实发音音频和 TTS 来源。
+
+  - id: GOROHESA
+    title: 内容质量评分引擎
+    path: 2026/2026-11-01/内容质量评分引擎.md
+    triage: 推进
+    maturity: 可推进
+    held_out: false
+    note: 下一步是挑「必要性」一条写 0/1/2 锚点，配 10 篇人工标注文档测一致率。
+
+  - id: BYKJRLQR
+    title: 文档流程控制监管
+    path: 2026/2026-11-01/文档流程控制监管.md
+    triage: 推进
+    maturity: 可推进
+    held_out: false
+    note: 下一步是列出状态、事件和守卫条件，拿现有文档手动套一遍。
+
+  - id: TVJGNSEE
+    title: 影视文件自动整理归档
+    path: 2026/2026-11-02/影视文件自动整理归档.md
+    triage: 推进
+    maturity: 可推进
+    held_out: true
+    note: 留出样本。下一步是只做纪录片，手动凑 20 个文件跑 ffprobe + TMDB，只看匹配准确率。
