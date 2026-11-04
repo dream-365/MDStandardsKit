@@ -11,7 +11,7 @@
 doc-writer 和 idea-writer 技能随本仓库作为插件发布。安装固定版本：
 
 ```bash
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.0 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.1 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
@@ -19,7 +19,7 @@ claude plugin install doc-writer@mdstandards --scope user
 
 ```bash
 claude plugin marketplace remove mdstandards
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.0 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.1 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 

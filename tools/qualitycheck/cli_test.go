@@ -50,8 +50,12 @@ func TestRunModes(t *testing.T) {
 	})
 	t.Run("validate ok", func(t *testing.T) {
 		code, out, _ := runQC(t, "-validate-rubric", "-rubric", rubric)
-		if code != 0 || !strings.Contains(out, "OK: rubric 1.0.0") {
-			t.Fatalf("code=%d out=%q", code, out)
+		r, err := LoadRubric(rubric)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := "OK: rubric " + r.Version + "\n"; code != 0 || out != want {
+			t.Fatalf("code=%d out=%q, want %q", code, out, want)
 		}
 	})
 	t.Run("audit missing flags", func(t *testing.T) {

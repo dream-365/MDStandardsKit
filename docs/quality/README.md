@@ -16,7 +16,9 @@ Each target has two forms:
 
 The separation between the real specs (91.0 and 93.3) and the two non-spec documents (15.0 and 12.0) is the signal the scorecard is meant to provide. The real reviewer pass is independent of the writer; the auditor verifies evidence presence, section placement, and score arithmetic, not whether evidence is sufficient or true.
 
-The calibration set in `skills/doc-writer/spec/quality/calibration/gold.v1.json` stays pinned to the 2026-11-02 SPEC-001 revision and its archived findings.
+These real passes used rubric 1.0.0, archived at `skills/doc-writer/spec/quality/archive/rubric.v1.0.0.yaml`. Rubric 1.1.0 adds `arch.references_source`, so their findings remain historical records and need a fresh independent pass before audit or calibration against the current rubric.
+
+The calibration set in `skills/doc-writer/spec/quality/calibration/gold.v1.json` stays pinned to rubric 1.0.0. SPEC-001's 2026-11-02 pass is archived; the two candidate entries keep their original findings. All three need re-review and re-adjudication against 1.1.0 before use.
 
 ## Smoke reports
 

@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "rubric_version": "1.0.0",
+  "rubric_archive": "skills/doc-writer/spec/quality/archive/rubric.v1.0.0.yaml",
   "entries": [
     {
       "target": "docs/specs/SPEC-001-mdstandards/spec.md",
