@@ -1,0 +1,544 @@
+version: "1.0.0"
+
+scoring_rules:
+  core_na_with_reason: true
+  note: "core item 的 level = 2 允许明确说明该项不适用并给出具体理由；这不是 na，仍计入 headline。"
+
+dimensions:
+  - id: background
+    name: 背景落地
+    weight: 2
+    items:
+      - id: bg.current_state
+        question: "1.1 是否写清了模块职责、核心流程与当前技术栈？"
+        tier: core
+        weight: 1
+        section: "1.1 系统现状"
+        aliases: ["系统现状", "现状", "背景与上下文"]
+        na_allowed: false
+        levels:
+          "0": "缺失，或只有一句「现有系统」"
+          "1": "写了模块职责或流程之一，但不足以理解现状"
+          "2": "写清模块职责、核心流程与当前技术栈"
+        evidence_hint: "职责、调用链、数据流或技术栈的具体描述"
+
+      - id: bg.failure_chain
+        question: "1.2 是否有从触发到后果的分步失败链？"
+        tier: core
+        weight: 1
+        section: "1.2 核心技术痛点"
+        aliases: ["核心技术痛点", "痛点", "问题分析"]
+        na_allowed: false
+        levels:
+          "0": "缺失或泛泛而谈"
+          "1": "有痛点描述但没有分步失败链"
+          "2": "有从触发到后果的分步失败链"
+        evidence_hint: "编号步骤或因果链"
+
+      - id: bg.trigger
+        question: "1.3 是否解释了为什么现在做？"
+        tier: core
+        weight: 1
+        section: "1.3 重构/设计动机"
+        aliases: ["重构/设计动机", "重构动机", "设计动机", "动机", "触发点"]
+        na_allowed: false
+        levels:
+          "0": "缺失"
+          "1": "写了目标但没解释为什么现在"
+          "2": "解释了触发点与为什么现在做"
+        evidence_hint: "业务/技术触发点与时间理由"
+
+      - id: bg.non_goals
+        question: "1.4 是否写了不做的后果与本次非目标？"
+        tier: core
+        weight: 1
+        section: "1.4 非目标"
+        aliases: ["非目标", "边界", "约束"]
+        na_allowed: false
+        levels:
+          "0": "缺失"
+          "1": "列了非目标但没有说明不做的后果"
+          "2": "写了不做的后果与本次非目标"
+        evidence_hint: "不做的后果 + 非目标清单"
+
+  - id: pain_evidence
+    name: 痛点证据
+    weight: 3
+    items:
+      - id: bg.pain_evidence
+        question: "1.2 是否有至少一条可核实的证据（事故、度量或引述）？"
+        tier: core
+        weight: 1
+        section: "1.2 核心技术痛点"
+        aliases: ["核心技术痛点", "痛点", "问题分析"]
+        na_allowed: false
+        levels:
+          "0": "缺失，或只有「性能不好」「代码很乱」"
+          "1": "有相关内容，但不可核实、无出处，或与失败链不对应"
+          "2": "有至少一条可核实证据，且与失败链直接对应"
+        evidence_hint: "事故的时间/文件/后果、度量数字、带出处的引述"
+
+  - id: goal_verifiability
+    name: 目标可验收
+    weight: 3
+    items:
+      - id: goal.verifiable
+        question: "2.1 每个 Goal 是否都有验收方式？"
+        tier: core
+        weight: 2
+        section: "2.1 目标"
+        aliases: ["目标", "Goals", "目标与非目标"]
+        na_allowed: false
+        levels:
+          "0": "缺失，或只有「提升/优化」"
+          "1": "部分 Goal 有验收方式"
+          "2": "每个 Goal 都有验收方式（test/指标/人工检查）"
+        evidence_hint: "每个 Goal 后面的验收说明"
+
+      - id: goal.quantified
+        question: "2.1 是否至少有一个 Goal 有数字/单位/明确阈值？"
+        tier: core
+        weight: 1
+        section: "2.1 目标"
+        aliases: ["目标", "Goals", "目标与非目标"]
+        na_allowed: false
+        levels:
+          "0": "没有任何数字/阈值"
+          "1": "有数字但无单位或阈值"
+          "2": "至少一个 Goal 有数字、单位或明确阈值"
+        evidence_hint: "性能/资源/覆盖率等可度量指标"
+
+      - id: goal.count
+        question: "2.1 Goals 是否控制在 3–6 个？"
+        tier: extended
+        weight: 1
+        section: "2.1 目标"
+        aliases: ["目标", "Goals", "目标与非目标"]
+        na_allowed: true
+        levels:
+          "0": "少于 3 或多于 6 个，且没有拆分说明"
+          "1": "3–6 个 Goal"
+          "2": "3–6 个 Goal，且按架构/性能/可靠性分类"
+        evidence_hint: "Goal 数量与分类"
+
+  - id: non_goal_boundary
+    name: 非目标边界
+    weight: 2
+    items:
+      - id: nongoal.labeled
+        question: "2.2 每条 Non-Goal 是否标了本次不做或 Deferred to Phase 2？"
+        tier: core
+        weight: 2
+        section: "2.2 非目标"
+        aliases: ["非目标", "Non-Goals", "边界"]
+        na_allowed: false
+        levels:
+          "0": "缺失或未标注"
+          "1": "部分标注「本次不做」/「Deferred to Phase 2」"
+          "2": "每条都标注「本次不做」/「Deferred to Phase 2」"
+        evidence_hint: "每条 Non-Goal 的标注"
+
+      - id: nongoal.not_dumping_ground
+        question: "2.2 非目标是否能追溯到痛点或边界？"
+        tier: extended
+        weight: 1
+        section: "2.2 非目标"
+        aliases: ["非目标", "Non-Goals", "边界"]
+        na_allowed: true
+        levels:
+          "0": "非目标与痛点无关，像垃圾桶"
+          "1": "部分非目标与痛点相关"
+          "2": "每条非目标都能追溯到痛点或边界"
+        evidence_hint: "非目标与痛点的对应关系"
+
+  - id: architecture
+    name: 架构自洽
+    weight: 2
+    items:
+      - id: arch.solution_shape
+        question: "第 3 章是否有拓扑或等价的模块/数据流描述？"
+        tier: core
+        weight: 2
+        section: "3. 架构设计与核心方案"
+        aliases: ["架构设计与核心方案", "架构设计", "方案"]
+        na_allowed: false
+        levels:
+          "0": "第 3 章缺失或为空"
+          "1": "只有模块清单或目录，没有拓扑/数据流"
+          "2": "有拓扑图或等价的模块/数据流描述"
+        evidence_hint: "拓扑图、模块职责或数据流"
+
+      - id: arch.topology
+        question: "3.1 拓扑图是否让每个模块有一句职责？"
+        tier: extended
+        weight: 1
+        section: "3.1 总体架构"
+        aliases: ["总体架构", "架构", "拓扑"]
+        na_allowed: true
+        levels:
+          "0": "无图且无文字拓扑"
+          "1": "有图但缺少模块职责"
+          "2": "有能看懂的拓扑图，每个模块有一句职责"
+        evidence_hint: "图与模块职责说明"
+
+      - id: arch.change_set
+        question: "第 3 章是否写清新增/改造/保持不变？"
+        tier: extended
+        weight: 1
+        section: "3. 架构设计与核心方案"
+        aliases: ["架构设计与核心方案", "架构设计", "方案"]
+        na_allowed: true
+        levels:
+          "0": "没写新增/改造/不变"
+          "1": "写了部分"
+          "2": "写清新增、改造与保持不变"
+        evidence_hint: "新增/改造/不变清单"
+
+      - id: arch.rationale
+        question: "关键选型是否有理由，详细对比指向第 7 章？"
+        tier: extended
+        weight: 1
+        section: "3.4 关键选型与约束"
+        aliases: ["关键选型与约束", "关键选型", "选型"]
+        na_allowed: true
+        levels:
+          "0": "无选型理由"
+          "1": "有理由但无对比"
+          "2": "关键选型有理由，详细对比指向第 7 章"
+        evidence_hint: "选型理由与第 7 章引用"
+
+  - id: detailed_design
+    name: 详细设计完整
+    weight: 2
+    items:
+      - id: design.contract
+        question: "第 4 章是否至少有一份数据模型或接口契约？"
+        tier: core
+        weight: 2
+        section: "4. 详细设计"
+        aliases: ["详细设计", "设计"]
+        na_allowed: false
+        levels:
+          "0": "第 4 章缺失或为空"
+          "1": "只有术语/背景，没有数据模型或接口契约"
+          "2": "至少有一份数据模型或接口契约"
+        evidence_hint: "字段表、接口签名或请求/响应契约"
+
+      - id: design.data_model
+        question: "4.3 数据模型是否有字段类型、必填与校验？"
+        tier: extended
+        weight: 1
+        section: "4.3 数据模型与契约"
+        aliases: ["数据模型与契约", "数据模型", "数据模型与存储"]
+        na_allowed: true
+        levels:
+          "0": "无字段类型/必填/校验"
+          "1": "有字段但缺必填或校验"
+          "2": "字段有类型、必填、校验"
+        evidence_hint: "字段表或 schema"
+
+      - id: design.interface
+        question: "4.4 接口是否有请求/响应/状态码或方法签名？"
+        tier: extended
+        weight: 1
+        section: "4.4 接口与协议"
+        aliases: ["接口与协议", "接口"]
+        na_allowed: true
+        levels:
+          "0": "无请求/响应/状态码或方法签名"
+          "1": "有接口但缺响应或错误码"
+          "2": "接口有请求/响应/状态码或方法签名"
+        evidence_hint: "接口表、方法签名或协议说明"
+
+      - id: design.sequence
+        question: "4.5 复杂流程是否有时序图或等价分步说明？"
+        tier: extended
+        weight: 1
+        section: "4.5 核心流程与时序"
+        aliases: ["核心流程与时序", "时序", "核心流程"]
+        na_allowed: true
+        levels:
+          "0": "复杂流程无时序图也无分步说明"
+          "1": "有分步说明但缺异常路径"
+          "2": "复杂流程有时序图或等价分步说明，含异常路径"
+        evidence_hint: "时序图或编号步骤"
+
+      - id: design.errors
+        question: "4.6 每个错误码是否有触发场景与处理策略？"
+        tier: extended
+        weight: 1
+        section: "4.6 异常处理与错误码"
+        aliases: ["异常处理与错误码", "错误码", "异常处理"]
+        na_allowed: true
+        levels:
+          "0": "无错误码或只写「抛出异常」"
+          "1": "有错误码但缺触发场景或处理策略"
+          "2": "每个错误码有触发场景与处理策略"
+        evidence_hint: "错误码表"
+
+  - id: nfr
+    name: NFR 可度量
+    weight: 2
+    items:
+      - id: nfr.measurable
+        question: "第 5 章每条 NFR 是否有数字、单位或验收方式？"
+        tier: core
+        weight: 2
+        section: "5. 非功能性需求"
+        aliases: ["非功能性需求", "NFR"]
+        na_allowed: false
+        levels:
+          "0": "缺失，或只有「安全/快速/稳定」"
+          "1": "部分 NFR 有数字、单位或验收方式"
+          "2": "每条 NFR 都有数字、单位或明确验收方式"
+        evidence_hint: "P95/P99、QPS、内存、SLA 等"
+
+      - id: nfr.coverage
+        question: "第 5 章是否覆盖性能、可靠性、可观测性、安全，或说明不适用？"
+        tier: core
+        weight: 1
+        section: "5. 非功能性需求"
+        aliases: ["非功能性需求", "NFR"]
+        na_allowed: false
+        levels:
+          "0": "未覆盖任何一类"
+          "1": "覆盖部分类别，未说明不适用"
+          "2": "覆盖四类，或说明哪类不适用"
+        evidence_hint: "四类 NFR 或明确的不适用说明"
+
+      - id: nfr.honesty
+        question: "未实测的指标是否标了 [estimated] 或 未实现？"
+        tier: core
+        weight: 1
+        section: "5. 非功能性需求"
+        aliases: ["非功能性需求", "NFR"]
+        na_allowed: false
+        levels:
+          "0": "未实测的指标写成已达成"
+          "1": "部分未实测项未标注"
+          "2": "未实测标 [estimated]，未实现标 未实现"
+        evidence_hint: "[estimated] / 未实现 标注"
+
+  - id: rollout
+    name: 上线可回滚
+    weight: 2
+    items:
+      - id: rollout.release
+        question: "6.1 是否有发布策略与灰度节奏？"
+        tier: core
+        weight: 1
+        section: "6.1 发布与灰度"
+        aliases: ["发布与灰度", "发布", "灰度"]
+        na_allowed: false
+        levels:
+          "0": "缺失"
+          "1": "有发布方式但无灰度节奏"
+          "2": "有发布策略与灰度节奏"
+        evidence_hint: "蓝绿/金丝雀/Feature Flag 与观察期"
+
+      - id: rollout.migration
+        question: "6.2 是否有迁移/兼容方案，或说明无需迁移？"
+        tier: core
+        weight: 1
+        section: "6.2 数据迁移与兼容性"
+        aliases: ["数据迁移与兼容性", "数据迁移", "迁移与兼容性", "兼容性"]
+        na_allowed: false
+        levels:
+          "0": "缺失且未说明无需迁移"
+          "1": "有迁移方案但缺兼容策略"
+          "2": "有迁移/兼容方案，或明确说明无需迁移"
+        evidence_hint: "Backfill、双写、影子表或「无需迁移 + 理由」"
+
+      - id: rollout.smoke
+        question: "6.3 是否有冒烟清单与观察指标？"
+        tier: core
+        weight: 1
+        section: "6.3 上线验证与冒烟"
+        aliases: ["上线验证与冒烟", "冒烟", "上线验证"]
+        na_allowed: false
+        levels:
+          "0": "缺失"
+          "1": "有冒烟步骤但无观察指标"
+          "2": "有冒烟清单与观察指标"
+        evidence_hint: "冒烟步骤与指标列表"
+
+      - id: rollout.rollback_trigger
+        question: "6.4 回滚触发条件是否是可观测数字？"
+        tier: core
+        weight: 2
+        section: "6.4 回滚与熔断"
+        aliases: ["回滚与熔断", "回滚", "熔断", "回滚与灾难恢复"]
+        na_allowed: false
+        levels:
+          "0": "缺失，或只写「可以回滚」"
+          "1": "有回滚步骤但触发条件不可观测"
+          "2": "回滚触发条件是可观测数字"
+        evidence_hint: "错误率、延迟、资源阈值"
+
+      - id: rollout.rollback_steps
+        question: "6.4 回滚步骤是否可执行？"
+        tier: core
+        weight: 1
+        section: "6.4 回滚与熔断"
+        aliases: ["回滚与熔断", "回滚", "熔断", "回滚与灾难恢复"]
+        na_allowed: false
+        levels:
+          "0": "缺失"
+          "1": "有步骤但不可执行"
+          "2": "回滚步骤可执行，不止写「可以回滚」"
+        evidence_hint: "编号步骤或命令"
+
+  - id: alternatives
+    name: 替代方案诚实
+    weight: 2
+    items:
+      - id: alts.status_quo
+        question: "第 7 章是否有 Status Quo 及其成本/风险？"
+        tier: core
+        weight: 1
+        section: "7. 替代方案与权衡"
+        aliases: ["替代方案与权衡", "替代方案", "方案对比"]
+        na_allowed: false
+        levels:
+          "0": "缺失 Status Quo"
+          "1": "提到现状但没有成本/风险"
+          "2": "有 Status Quo 及其成本/风险"
+        evidence_hint: "现状方案的成本、风险或触发阈值"
+
+      - id: alts.rejected
+        question: "第 7 章是否至少有一个被否决方案，且淘汰原因对应当前约束？"
+        tier: core
+        weight: 1
+        section: "7. 替代方案与权衡"
+        aliases: ["替代方案与权衡", "替代方案", "方案对比"]
+        na_allowed: false
+        levels:
+          "0": "没有否决方案"
+          "1": "有否决方案但淘汰原因不对应当前约束"
+          "2": "至少一个否决方案，淘汰原因对应当前约束"
+        evidence_hint: "方案思路、优点、淘汰原因"
+
+      - id: alts.matrix
+        question: "第 7 章是否有与约束对应的权衡矩阵？"
+        tier: core
+        weight: 1
+        section: "7. 替代方案与权衡"
+        aliases: ["替代方案与权衡", "替代方案", "方案对比"]
+        na_allowed: false
+        levels:
+          "0": "无权衡矩阵"
+          "1": "有矩阵但维度与约束无关"
+          "2": "有权衡矩阵，维度与约束对应"
+        evidence_hint: "权衡矩阵表"
+
+      - id: alts.consistency
+        question: "第 7 章结论是否与 Goals、架构选型一致？"
+        tier: core
+        weight: 1
+        section: "7. 替代方案与权衡"
+        aliases: ["替代方案与权衡", "替代方案", "方案对比"]
+        na_allowed: false
+        levels:
+          "0": "结论与 Goals/架构矛盾"
+          "1": "部分对应"
+          "2": "结论与 Goals、架构选型一致"
+        evidence_hint: "结论与第 2/3 章的对应关系"
+
+  - id: cross_consistency
+    name: 跨章自洽
+    weight: 2
+    items:
+      - id: x.goals_trace
+        question: "后续章节是否逐条回应 Goals？"
+        tier: core
+        weight: 1
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "后续章节没有回应 Goals"
+          "1": "部分 Goals 能在后续章节找到"
+          "2": "每个 Goal 都能在后续章节找到对应设计"
+        evidence_hint: "Goal 与第 3/4/5 章的对应关系"
+
+      - id: x.nfr_arch
+        question: "NFR 与架构、选型是否一致？"
+        tier: core
+        weight: 1
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "NFR 与架构/选型矛盾"
+          "1": "部分对应"
+          "2": "NFR 与架构、选型一致"
+        evidence_hint: "NFR 与第 3/4 章的性能/可靠性设计"
+
+      - id: x.rollback_release
+        question: "回滚与发布策略是否一致？"
+        tier: core
+        weight: 1
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "回滚与发布策略矛盾"
+          "1": "部分对应"
+          "2": "回滚与发布策略一致"
+        evidence_hint: "回滚步骤与发布/灰度策略的对应关系"
+
+  - id: evidence_hygiene
+    name: 证据卫生
+    weight: 3
+    items:
+      - id: x.no_placeholders
+        question: "是否没有把 无 / ... / 待补充 / TBD 当作实质回答？"
+        tier: core
+        weight: 2
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "有 无 / ... / 待补充 / TBD 作为实质回答"
+          "1": "有少量占位但非核心章节"
+          "2": "没有占位作为实质回答"
+        evidence_hint: "全文搜索占位词"
+
+      - id: x.no_code
+        question: "是否没有堆砌实现代码、测试日志或偶发报错？"
+        tier: core
+        weight: 1
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "大片实现代码/测试日志/偶发报错堆砌"
+          "1": "有少量实现代码但不影响阅读"
+          "2": "没有具体实现代码、测试日志或偶发报错堆砌"
+        evidence_hint: "代码块、日志与报错段落"
+
+      - id: x.numbers_sourced
+        question: "关键数字是否有出处，或标了 [estimated]？"
+        tier: core
+        weight: 1
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "关键数字无出处且未标 estimated"
+          "1": "部分数字有出处或标注"
+          "2": "关键数字有出处，未实测标 [estimated]"
+        evidence_hint: "数字与出处/标注"
+
+      - id: x.no_fabricated_refs
+        question: "是否没有捏造 SPEC 引用、depends_on 目标或 M<N>？"
+        tier: core
+        weight: 2
+        section: "全文"
+        aliases: ["全文"]
+        na_allowed: false
+        levels:
+          "0": "有捏造的 SPEC 引用或 depends_on 目标，或 M<N>"
+          "1": "有可疑引用但未确认"
+          "2": "没有捏造引用或 M<N>"
+        evidence_hint: "引用与 depends_on 目标的可核实性"

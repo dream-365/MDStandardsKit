@@ -1,7 +1,7 @@
 # Spec Quality Report
 
 - Target: `docs/specs/SPEC-001-mdstandards/spec.md`
-- Rubric: 1.0.0 (`acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947`)
+- Rubric: 1.1.0 (`1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e`)
 - Target SHA-256: `bb8d4081ca8b4738feeeea3a8c22353dabf47fdeb466803ef4593b8b4d0f1d56`
 - Reviewer session: `reviewer-smoke`
 
@@ -69,7 +69,7 @@
 
 ## 架构自洽 (architecture)
 
-- **arch.solution_shape** [core, level 0] — 第 3 章是否有拓扑或等价的模块/数据流描述？
+- **arch.solution_shape** [core, level 0] — 第 3 章是否有本次变更的拓扑或等价的模块/数据流描述？
   - rationale: smoke run; not a content verdict
   - missing: not reviewed in this smoke run
 - **arch.topology** [extended, level 0] — 3.1 拓扑图是否让每个模块有一句职责？
@@ -79,6 +79,9 @@
   - rationale: smoke run; not a content verdict
   - missing: not reviewed in this smoke run
 - **arch.rationale** [extended, level 0] — 关键选型是否有理由，详细对比指向第 7 章？
+  - rationale: smoke run; not a content verdict
+  - missing: not reviewed in this smoke run
+- **arch.references_source** [extended, level 0] — 第 3 章是否引用 depends_on 架构文档，而不是自行展开其全局结构？
   - rationale: smoke run; not a content verdict
   - missing: not reviewed in this smoke run
 

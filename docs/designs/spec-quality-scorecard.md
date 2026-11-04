@@ -124,7 +124,7 @@ v1 目标约 30 条 item，跨 11 个维度：
 | 痛点证据 | 1.2 至少一条可核实证据，且与失败链对应 | core |
 | 目标可验收 | 每个 Goal 有验收方式；至少一个 Goal 有数字/阈值 | core |
 | 非目标边界 | 每条标 `本次不做` / `Deferred to Phase 2` | core |
-| 架构自洽 | `arch.solution_shape`：第 3 章有拓扑或等价的模块/数据流描述（core）；拓扑图、新增/改造/不变、选型理由（extended） | core + extended |
+| 架构自洽 | `arch.solution_shape`：第 3 章有本次变更的拓扑或等价的模块/数据流描述（core）；拓扑图、新增/改造/不变、选型理由、引用而非照抄架构文档（extended） | core + extended |
 | 详细设计完整 | `design.contract`：第 4 章至少一份数据模型或接口契约（core）；字段类型/必填/校验、错误码触发与处理（extended） | core + extended |
 | NFR 可度量 | 每条有数字/单位/验收方式；未实测标 `[estimated]` | core |
 | 上线可回滚 | 回滚触发条件是可观测数字；回滚步骤可执行 | core |
@@ -917,3 +917,12 @@ None.
 **VERDICT:** ENG REVIEW ISSUES OPEN — 13 issues, 1 critical gap; implementation tasks T1–T6 defined.
 
 NO UNRESOLVED DECISIONS
+
+## Addendum: rubric 1.1.0 (2026-11-04)
+
+新增 `arch.references_source`（extended，诊断分）：第 3 章应引用 `depends_on` 中的架构文档承载全局结构，只描述本次变更范围内的拓扑、职责或数据流，不自行展开全局结构。
+
+- 与 `arch.solution_shape` 的分工：后者接受“本次变更范围的拓扑/数据流”，不要求全局拓扑。
+- 识别架构文档：优先 frontmatter `depends_on`；无 frontmatter 时看正文元数据表的关联资源或第 3 章的明确指向；都没有时标 `na`。
+- 有架构文档但第 3 章缺失或完全没有引用时记 0 分，不得用 `na` 规避。
+- rubric 1.0.0 归档在 `skills/doc-writer/spec/quality/archive/rubric.v1.0.0.yaml`；历史 findings 与 `calibration/gold.v1.json` 仍固定在 1.0.0，重新评审前不能与 1.1.0 比较。
