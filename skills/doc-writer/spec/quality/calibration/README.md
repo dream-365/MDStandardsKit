@@ -13,10 +13,17 @@ Current state: 3 candidate entries. SPEC-001 has two independent passes; the oth
 ## Run
 
 ```bash
-qualitycheck -calibrate -rubric <rubric.v1.yaml> \
+# 复现归档的 1.0.0 历史结果
+qualitycheck -calibrate -rubric ../archive/rubric.v1.0.0.yaml \
   -reference <first-findings.json> \
   -findings <second-findings.json> \
-  -out calibration-report.md
+  -out calibration-report.1.0.0.md
+
+# 1.1.0 新评审（findings 必须由 1.1.0 重新生成）
+qualitycheck -calibrate -rubric ../rubric.v1.yaml \
+  -reference <first-findings.1.1.0.json> \
+  -findings <second-findings.1.1.0.json> \
+  -out calibration-report.1.1.0.md
 ```
 
 The report gives exact agreement, quadratic weighted kappa, a 3×3 confusion matrix, per-dimension agreement, and the item-level disagreements. It measures inter-rater agreement, not human truth.
@@ -30,6 +37,8 @@ SPEC-001 is now `gold`. Human adjudication on 2026-11-02 set the three disagreem
 - Human vs second: 97.4% exact, weighted kappa 0.894; core 96.6% exact, weighted kappa 0.651.
 
 The other two entries remain `candidate`. Four more human-scored specs are needed to reach the five-spec promotion gate. Per-dimension kappa can read low at high exact agreement when a dimension has little level variance; read the exact agreement alongside it.
+
+These results were produced with rubric 1.0.0, archived at `../archive/rubric.v1.0.0.yaml` (`sha256 acb806c8…`). Rubric 1.1.0 adds `arch.references_source`; the pinned findings and `human_levels` need a fresh independent pass and re-adjudication before they can be audited or compared against the current rubric. Until then `gold` means “gold under 1.0.0”, not a gate for 1.1.0.
 
 ## Promotion criteria
 

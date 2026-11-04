@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: "1.1.0"
 
 scoring_rules:
   core_na_with_reason: true
@@ -156,7 +156,7 @@ dimensions:
     weight: 2
     items:
       - id: arch.solution_shape
-        question: "第 3 章是否有拓扑或等价的模块/数据流描述？"
+        question: "第 3 章是否有本次变更的拓扑或等价的模块/数据流描述？"
         tier: core
         weight: 2
         section: "3. 架构设计与核心方案"
@@ -164,16 +164,16 @@ dimensions:
         na_allowed: false
         levels:
           "0": "第 3 章缺失或为空"
-          "1": "只有模块清单或目录，没有拓扑/数据流"
-          "2": "有拓扑图或等价的模块/数据流描述"
-        evidence_hint: "拓扑图、模块职责或数据流"
+          "1": "只有模块清单或目录，没有变更范围的拓扑/数据流"
+          "2": "有本次变更的拓扑图或等价的模块/数据流描述（全局结构可引用架构文档）"
+        evidence_hint: "本次变更的拓扑图、模块职责或数据流"
 
       - id: arch.topology
         question: "3.1 拓扑图是否让每个模块有一句职责？"
         tier: extended
         weight: 1
         section: "3.1 总体架构"
-        aliases: ["总体架构", "架构", "拓扑"]
+        aliases: ["总体架构", "架构", "拓扑", "3.2 核心模块职责", "核心模块职责"]
         na_allowed: true
         levels:
           "0": "无图且无文字拓扑"
@@ -206,6 +206,19 @@ dimensions:
           "1": "有理由但无对比"
           "2": "关键选型有理由，详细对比指向第 7 章"
         evidence_hint: "选型理由与第 7 章引用"
+
+      - id: arch.references_source
+        question: "第 3 章是否引用 depends_on 架构文档，而不是自行展开其全局结构？"
+        tier: extended
+        weight: 1
+        section: "3. 架构设计与核心方案"
+        aliases: ["架构设计与核心方案", "架构设计", "方案"]
+        na_allowed: true
+        levels:
+          "0": "存在可引用的 depends_on 架构文档，但第 3 章缺失或没有引用它"
+          "1": "引用了 depends_on 中的架构文档，但第 3 章仍自行展开超出本次变更范围的全局拓扑、模块职责或历史决策"
+          "2": "引用了 depends_on 中的架构文档承载全局结构，且第 3 章只描述本次变更范围内的拓扑、职责或数据流"
+        evidence_hint: "引用架构文档路径/章节的句子；或超出本次变更范围的全局结构段落"
 
   - id: detailed_design
     name: 详细设计完整
