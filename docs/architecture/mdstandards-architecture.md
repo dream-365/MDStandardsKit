@@ -101,7 +101,13 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
       "id_pattern": "^[A-Z]{8}$",
       "date_field": "date",
       "graph": false,
-      "placeholder_markers": ["<!-- 模板注释 -->"]
+      "placeholder_markers": [
+        "<!-- 一句话说清楚这个想法是什么。写不出来就说明还没想清楚。 -->",
+        "<!-- 展开说说：它是什么样子的？怎么运作？ -->",
+        "<!-- 它解决了什么问题？或者只是让你好奇？ -->",
+        "optional:outside-voice",
+        "<!-- 如果想推进，最小的一步是什么？ -->"
+      ]
     }
   }
 }
@@ -109,6 +115,7 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 
 `spec` 仍用顶层 `governed_globs`；其他类型用档案里的 `globs`。`graph: false` 表示该类型不要求依赖边，
 零依赖边覆盖断言不触发。宽 glob 让路径形状规则能看见两层/四层路径，而不是静默忽略。
+`optional:outside-voice` 是可选章节「外部的声音」的模板哨兵：整节缺失不报错，哨兵残留则命中占位符规则。
 
 外层的 `standard` 键是必须的：OPA 把数据文档按根合并，不用文件名做命名空间。
 没有这一层，`data.standard` 会是 undefined。
@@ -213,10 +220,10 @@ type 未知或含未知键时，CLI 在求值前 exit 2。
 | `idea.year_dir_mismatch` | 年份目录与 `date` 的年份不一致 |
 | `idea.status_invalid` | 状态不在 `status_values` |
 | `idea.tags_invalid` | `tags` 不是字符串列表 |
-| `idea.heading_missing` | 缺少四个必需二级标题之一 |
+| `idea.heading_missing` | 缺少四个必需二级标题之一（可选的「外部的声音」不算） |
 | `idea.placeholder_remaining` | 模板 HTML 注释或 `id: ABCDEFGH` 未替换 |
 
-空正文、`暂无`、`目前说不清，因为……` 都是合法内容，不产生结构 finding。
+空正文、`暂无`、`目前说不清，因为……` 都是合法内容，不产生结构 finding。「外部的声音」是可选章节：整节缺失不产生 finding；章节存在时，模板注释仍按 `idea.placeholder_remaining` 检查。
 
 ### 5.3 tasks 类型规则
 

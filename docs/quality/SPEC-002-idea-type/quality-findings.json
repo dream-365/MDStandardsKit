@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "rubric_version": "1.0.0",
-  "rubric_sha256": "acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947",
+  "rubric_version": "1.1.0",
+  "rubric_sha256": "1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e",
   "target": "docs/specs/SPEC-002-idea-type/spec.md",
-  "target_sha256": "52181d85687c1b9cc525c35fd0ca1799b695ec284f158af541e4146e3865fcdf",
+  "target_sha256": "b22b25a5f6f2784fe3fb95cd115d216b462b4451192d919c5613b910606b6ea4",
   "reviewer": {
     "role": "independent",
     "model": "claude",
-    "session_id": "reviewer-spec-002-20261103b",
-    "started_at": "2026-11-02T22:48:08Z"
+    "session_id": "reviewer-spec-002-20261106",
+    "started_at": "2026-11-06T12:35:59+08:00"
   },
   "items": [
     {
@@ -18,10 +18,10 @@
       "evidence": [
         {
           "section": "1.1 系统现状",
-          "quote": "`scripts/new` 负责建文件、生成 8 位大写 ID、校验标题非空、校验日期格式与 ID 唯一。"
+          "quote": "`scripts/new` 负责建文件、生成 8 位大写 ID、校验标题非空、校验日期格式与 ID 唯一。它不检查章节是否存在、占位符是否替换、状态是否合法、日期与目录是否一致，也不评价内容。"
         }
       ],
-      "rationale": "写清了想法库结构、scripts/new 的职责与流程，但未交代当前技术栈（语言/框架/版本），不足以完整理解现状。",
+      "rationale": "写了 idea 库的文件组织、章节模板与 `scripts/new` 的职责，但未交代当前技术栈（语言、工具或版本）。",
       "missing": ""
     },
     {
@@ -31,10 +31,10 @@
       "evidence": [
         {
           "section": "1.2 核心技术痛点",
-          "quote": "2. 章节缺失、模板注释还在、状态写错、日期与目录对不上，没有任何工具发现。"
+          "quote": "1. Agent 按模板建了一个想法文件。\n2. 章节缺失、模板注释还在、状态写错、日期与目录对不上，没有任何工具发现。\n3. 想法进入库，之后靠人翻文件时才发现问题；内容层面也没有统一标准判断「值不值得现在推进」。"
         }
       ],
-      "rationale": "1.2 以编号 1–3 给出从建文件到问题进入库后才被发现的完整失败链，符合分步因果要求。",
+      "rationale": "1.2 用 1→2→3 的编号链说明从建文件、无人发现到入库后靠人翻文件的后果。",
       "missing": ""
     },
     {
@@ -47,7 +47,7 @@
           "quote": "触发点是想法库开始承载越来越多的 Agent 生成内容，而现有 `scripts/new` 只管文件名和 ID。"
         }
       ],
-      "rationale": "明确给出触发点（Agent 生成内容增多）与为什么现在做（现有工具只管文件名和 ID）。",
+      "rationale": "1.3 点明触发点（Agent 生成内容增多）并解释为何现在做。",
       "missing": ""
     },
     {
@@ -60,7 +60,7 @@
           "quote": "不做结构闸门的后果见 1.2：空壳想法继续入库，内容低分的想法和人判断混在一起。"
         }
       ],
-      "rationale": "先说明不做的后果，再以 5 条清单列出本次非目标。",
+      "rationale": "1.4 先写不做结构闸门的后果，再列本次非目标。",
       "missing": ""
     },
     {
@@ -71,13 +71,9 @@
         {
           "section": "1.2 核心技术痛点",
           "quote": "证据：截至 2026-11-02，`~/Workspace/ideas` 有 5 篇想法；在没有结构闸门之前，`scripts/new` 建出的文件只保证 title/date/id 三项。"
-        },
-        {
-          "section": "1.2 核心技术痛点",
-          "quote": "2026-11-02 的冒烟测试对「万花筒」跑完 idea rubric，headline 25.0、diagnostic 35.0，证明内容评分链路能产出可审计的报告。"
         }
       ],
-      "rationale": "证据带日期、仓库与具体覆盖范围，并直接对应失败链中「结构无人检查、内容无标准」的后果。",
+      "rationale": "给出截至 2026-11-02 的篇数与 `scripts/new` 仅保证三项的事实，对应该失败链第 2 步。",
       "missing": ""
     },
     {
@@ -87,10 +83,18 @@
       "evidence": [
         {
           "section": "2.1 目标",
-          "quote": "验收：`TestIdeaConfigFailsClosed`、`TestIdeaValidRepo`。"
+          "quote": "- **G3 记录不误伤**：空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。验收：`TestIdeaValidRepo` 与真实 ideas 语料（2026-11-03 实测 9 篇）phase 1 通过。"
+        },
+        {
+          "section": "2.1 目标",
+          "quote": "- **G4 内容评分**：rubric 四个 core 项计算「推进就绪度」，成熟度和「非显而易见」只做诊断；独立 reviewer 先盲读再评分；`qualitycheck` 复算分数并验证逐字证据。验收：`-validate-rubric`、万花筒冒烟报告。"
+        },
+        {
+          "section": "2.1 目标",
+          "quote": "- **G6 可选外部声音**：模板在「为什么有意思」与「下一步」之间提供可选章节「外部的声音」；整节缺失不产生 finding；空正文允许（与其他章节一致）；保留含 `optional:outside-voice` 哨兵的模板注释则命中 `idea.placeholder_remaining`。验收：`TestIdeaOptionalVoiceSection`。"
         }
       ],
-      "rationale": "G1–G5 每个 Goal 后均附「验收：」，给出测试、实测或 make check 等验收方式。",
+      "rationale": "G1–G6 每条都以测试、`make check` 或冒烟报告给出验收方式。",
       "missing": ""
     },
     {
@@ -100,10 +104,10 @@
       "evidence": [
         {
           "section": "2.1 目标",
-          "quote": "缺失、损坏、未知 type、未知键都 exit 2。"
+          "quote": "验收：`TestIdeaValidRepo` 与真实 ideas 语料（2026-11-03 实测 9 篇）phase 1 通过。"
         }
       ],
-      "rationale": "G1 用退出码 2 作为明确阈值，满足至少一个 Goal 有数字/明确阈值的条件。",
+      "rationale": "G3 给出 2026-11-03 实测 9 篇的样本数量（数字+单位）。",
       "missing": ""
     },
     {
@@ -113,10 +117,10 @@
       "evidence": [
         {
           "section": "2.1 目标",
-          "quote": "**G5 spec 不回归**"
+          "quote": "- **G5 spec 不回归**：spec 的 `-dump-corpus` 输出逐字节不变；`make check` 全绿。验收：`TestSpecDumpCorpusGolden`、`make check`。\n- **G6 可选外部声音**：模板在「为什么有意思」与「下一步」之间提供可选章节「外部的声音」；整节缺失不产生 finding；空正文允许（与其他章节一致）；保留含 `optional:outside-voice` 哨兵的模板注释则命中 `idea.placeholder_remaining`。验收：`TestIdeaOptionalVoiceSection`。"
         }
       ],
-      "rationale": "共 G1–G5 五个 Goal，数量落在 3–6 内；但未按架构/性能/可靠性分类，故未达 level 2。",
+      "rationale": "G1–G6 共 6 个，在 3–6 范围内，但未按架构/性能/可靠性分类。",
       "missing": ""
     },
     {
@@ -126,10 +130,14 @@
       "evidence": [
         {
           "section": "2.2 非目标",
-          "quote": "**NG1** 想法状态流转校验（Deferred to Phase 2）。"
+          "quote": "- **NG1** 想法状态流转校验（Deferred to Phase 2）。"
+        },
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG4** Windows 分发（本次不做）。"
         }
       ],
-      "rationale": "NG1–NG5 每条都带「Deferred to Phase 2」或「本次不做」标注。",
+      "rationale": "NG1–NG6 每条都带「Deferred to Phase 2」或「本次不做」。",
       "missing": ""
     },
     {
@@ -139,10 +147,10 @@
       "evidence": [
         {
           "section": "2.2 非目标",
-          "quote": "**NG5** 内容分作为阻断门槛（本次不做；v0.2.0 只诊断）。"
+          "quote": "- **NG4** Windows 分发（本次不做）。"
         }
       ],
-      "rationale": "NG1/NG3/NG5 可追溯到现状或动机，但 NG2、NG4 与非目标边界关系弱，未做到每条可追溯。",
+      "rationale": "多数非目标可追溯到 1.2/1.3 或 v0.2.0 边界，NG4（Windows 分发）与痛点无对应。",
       "missing": ""
     },
     {
@@ -152,10 +160,10 @@
       "evidence": [
         {
           "section": "3. 架构设计与核心方案",
-          "quote": "CLI[mdstandards] --> Config[.mdstandards.json]"
+          "quote": "```mermaid\nflowchart LR\n    CLI[mdstandards] --> Config[.mdstandards.json]\n    CLI --> Policy[policy/data/standard.json]\n    Config --> Type[document type]\n    Policy --> Profile[document_types.idea]\n    Type --> Profile\n    Profile --> Extract[Extract root globs docType profile]\n    Extract --> Corpus[corpus + document_type]\n    Corpus --> Rego[policy/idea.rego]\n    Rego --> Findings[findings]\n    Findings --> Report[table / json / github]\n```"
         }
       ],
-      "rationale": "第 3 章含 mermaid 拓扑图，并在 3.2 给出各模块的新增/改造职责，构成等价的模块与数据流描述。",
+      "rationale": "3.1 的流程图给出本次变更从配置、解析、Rego 到报告的拓扑/数据流。",
       "missing": ""
     },
     {
@@ -165,10 +173,10 @@
       "evidence": [
         {
           "section": "3.1 总体架构",
-          "quote": "CLI[mdstandards] --> Config[.mdstandards.json]"
+          "quote": "    CLI[mdstandards] --> Config[.mdstandards.json]"
         }
       ],
-      "rationale": "有可读的拓扑图，但图中只有模块名，未为每个模块写一句职责说明。",
+      "rationale": "有流程图，但节点只有名称，未给每个模块一句职责；职责散见 3.2/3.4。",
       "missing": ""
     },
     {
@@ -178,10 +186,18 @@
       "evidence": [
         {
           "section": "3. 架构设计与核心方案",
-          "quote": "- 单 `main` 包，不拆 `cmd/` + `internal/`。"
+          "quote": "**新增**：\n\n- `policy/idea.rego`：idea 结构规则。\n- `skills/idea-writer/`：SKILL、rubric、reviewer、calibration、findings schema。\n- `.mdstandards.json` 读取与类型解析。\n- `docs/quality/ideas/` 报告目录约定。"
+        },
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "**改造**：\n\n- `extract.go`：`Extract(root, globs, docType, profile)`；idea 字段与章节解析；`date` 同时接受字符串和 `time.Time`。\n- `main.go`：类型→globs 解析；配置失败 fail closed；零依赖边断言按 `graph` 生效。\n- `policy/refs.rego`、`policy/status.rego`：显式 spec 类型守卫。\n- `tools/qualitycheck`：`-title` / `-target-label`；findings schema 增加 `guess`。"
+        },
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "**保持不变**：\n\n- spec 的规则、退出码和 `-dump-corpus` 字节输出。\n- 单 `main` 包，不拆 `cmd/` + `internal/`。\n- 不新增运行时依赖。"
         }
       ],
-      "rationale": "3.2 分「新增 / 改造 / 保持不变」三节逐项列出变更集。",
+      "rationale": "3.2 分「新增／改造／保持不变」三节列出具体文件与契约。",
       "missing": ""
     },
     {
@@ -191,10 +207,23 @@
       "evidence": [
         {
           "section": "3.4 关键选型与约束",
-          "quote": "方案对比见第 7 章。"
+          "quote": "- **类型配置 + 专用 Rego**：类型由仓库级 `.mdstandards.json` 声明，规则集中在 `policy/idea.rego`；spec 的规则、退出码与 `-dump-corpus` 契约不变。方案对比见第 7 章。"
         }
       ],
-      "rationale": "3.4 每项关键选型均给出理由（类型配置+专用 Rego、fail-closed 等），并指向第 7 章对比。",
+      "rationale": "3.4 给出类型配置+专用 Rego 的理由，并明确「方案对比见第 7 章」。",
+      "missing": ""
+    },
+    {
+      "id": "arch.references_source",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "全局结构与模块职责见 [架构文档](../../architecture/mdstandards-architecture.md)；本节只描述 idea 类型变更范围内的数据流。"
+        }
+      ],
+      "rationale": "3.1 明确把全局结构与模块职责交给 depends_on 架构文档，本章只描述 idea 变更范围内的数据流。",
       "missing": ""
     },
     {
@@ -207,16 +236,21 @@
           "quote": "| `document_type` | 语料级类型，idea 时为 `idea` |"
         }
       ],
-      "rationale": "4.3 提供 idea 文档在 corpus 中的数据模型字段表，满足至少一份数据模型契约。",
+      "rationale": "4.3 给出 corpus 字段数据模型，4.4 给出 CLI 接口，至少一份契约成立。",
       "missing": ""
     },
     {
       "id": "design.data_model",
       "status": "scored",
-      "level": 0,
-      "evidence": [],
-      "rationale": "字段表只有「字段 / 含义」两列，没有字段类型、必填标记或校验规则。",
-      "missing": "4.3 的字段表缺少类型、必填与校验信息；需为每个字段补类型（如 string/array）、是否必填及校验约束后才算达标。"
+      "level": 1,
+      "evidence": [
+        {
+          "section": "4.3 数据模型与契约",
+          "quote": "| 字段 | 含义 |\n|---|---|\n| `document_type` | 语料级类型，idea 时为 `idea` |"
+        }
+      ],
+      "rationale": "字段表只有「含义」列，没有类型、必填与校验规则。",
+      "missing": ""
     },
     {
       "id": "design.interface",
@@ -225,10 +259,14 @@
       "evidence": [
         {
           "section": "4.4 接口与协议",
+          "quote": "```bash\nmdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format table|json\n```"
+        },
+        {
+          "section": "4.4 接口与协议",
           "quote": "`-policy` 相对当前工作目录解析；idea 仓库必须显式传插件的 policy 目录，或设置 `MDSTANDARDS_POLICY_DIR`。输出沿用 `table|json|github`；退出码见 4.6。"
         }
       ],
-      "rationale": "给出 CLI 调用签名、输出格式与退出码引用，构成接口与协议说明。",
+      "rationale": "4.4 给出 CLI 方法签名/参数、输出格式，并指向 4.6 的退出码。",
       "missing": ""
     },
     {
@@ -238,10 +276,10 @@
       "evidence": [
         {
           "section": "4.5 核心流程与时序",
-          "quote": "4. 覆盖断言：零受管文档、`phase >= 1` 的零解析文档都退出 2；idea 类型不要求依赖边。"
+          "quote": "1. 读取仓库根 `.mdstandards.json`，解析 `type=idea`。\n2. 从 `standard.json` 取出 `document_types.idea` 的 globs 与结构配置。\n3. 遍历 globs，解析 frontmatter 与正文标题，产出 document 或 extract_error。\n4. 覆盖断言：零受管文档、`phase >= 1` 的零解析文档都退出 2；idea 类型不要求依赖边。\n5. `policy/idea.rego` 求值，产出结构 findings。\n6. `phase 1` 有 finding 退出 1；否则退出 0。内容评分在记录流程之外异步进行。"
         }
       ],
-      "rationale": "4.5 用 1–6 编号步骤描述核心流程，并在第 4 步覆盖零文档/零解析等异常路径。",
+      "rationale": "4.5 用 1–6 编号步骤描述解析到退出的流程，含零文档/解析失败分支。",
       "missing": ""
     },
     {
@@ -251,23 +289,23 @@
       "evidence": [
         {
           "section": "4.6 异常处理与错误码",
-          "quote": "| 2 | 配置/策略加载失败、未知 type、零受管文档、零解析文档、解析错误 |"
+          "quote": "| 码 | 含义 |\n|---|---|\n| 0 | 干净，或 phase 0 |\n| 1 | phase 1 有结构 finding |\n| 2 | 配置/策略加载失败、未知 type、零受管文档、零解析文档、解析错误 |"
         }
       ],
-      "rationale": "4.6 列出退出码及触发场景，但未给出每个码的处理策略。",
+      "rationale": "退出码各有含义与触发场景，但没有写调用方的恢复/处理策略。",
       "missing": ""
     },
     {
       "id": "nfr.measurable",
       "status": "scored",
-      "level": 1,
+      "level": 2,
       "evidence": [
         {
           "section": "5. 非功能性需求",
-          "quote": "**NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。"
+          "quote": "- **NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。"
         }
       ],
-      "rationale": "仅性能项有数字与单位；NFR-1/3/4/5 未给出数字或明确验收方式，故为部分达标。",
+      "rationale": "NFR-2 给出 1 秒阈值、0.01s 实测与 1 MiB 上限；其余 NFR 以可验证行为验收。",
       "missing": ""
     },
     {
@@ -277,10 +315,14 @@
       "evidence": [
         {
           "section": "5. 非功能性需求",
-          "quote": "**NFR-4 可观测性**：每条 finding 带 `rule`、`document`、`target`、`message`；内容报告带 rubric 版本、目标 SHA-256、reviewer 会话。"
+          "quote": "- **NFR-3 安全**：`.mdstandards.json` 使用 `DisallowUnknownFields`；配置错误 fail closed；frontmatter 仍按不可信输入处理。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-4 可观测性**：每条 finding 带 `rule`、`document`、`target`、`message`；内容报告带 rubric 版本、目标 SHA-256、reviewer 会话。"
         }
       ],
-      "rationale": "覆盖性能（NFR-2）、可靠性（NFR-1 确定性）、可观测性（NFR-4）与安全（NFR-3）。",
+      "rationale": "确定性/性能、安全、可观测性分别由 NFR-1/2、NFR-3、NFR-4 覆盖。",
       "missing": ""
     },
     {
@@ -290,23 +332,23 @@
       "evidence": [
         {
           "section": "5. 非功能性需求",
-          "quote": "**NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。"
+          "quote": "- **NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。"
         }
       ],
-      "rationale": "量化指标标注为「实测」，全文未把未实测指标写成已达成，也无需 [estimated] 标注。",
+      "rationale": "性能数字标明 2026-11-03 的实测环境与结果，未把未实测项写成已达成。",
       "missing": ""
     },
     {
       "id": "rollout.release",
       "status": "scored",
-      "level": 2,
+      "level": 1,
       "evidence": [
         {
           "section": "6.1 发布与灰度",
-          "quote": "3. 插件版本升到 `0.2.0`，release tag 必须与 `plugin.json` 一致；先对 `testdata/idea-repo` 冒烟，再对真实 ideas 仓库灰度。"
+          "quote": "1. 在 `~/Workspace/ideas` 增加 `.mdstandards.json`。\n2. `scripts/new` 在工具可用时跑 phase 0 检查；不可用只打印提示。\n3. 插件版本升到 `0.2.0`，release tag 必须与 `plugin.json` 一致；先对 `testdata/idea-repo` 冒烟，再对真实 ideas 仓库灰度。"
         }
       ],
-      "rationale": "给出发布版本/tag 要求，以及先在 testdata 冒烟、再对真实仓库灰度的节奏。",
+      "rationale": "有发布步骤与 testdata→真实仓库的顺序，但没有灰度批次或观察期。",
       "missing": ""
     },
     {
@@ -319,33 +361,33 @@
           "quote": "- 不迁移既有想法文件；新增配置即可启用结构闸门。"
         }
       ],
-      "rationale": "明确说明不迁移既有文件及启用方式，属于「无需迁移 + 理由」的兼容方案。",
+      "rationale": "明确说明不迁移既有文件，新增配置即可启用。",
       "missing": ""
     },
     {
       "id": "rollout.smoke",
       "status": "scored",
-      "level": 2,
+      "level": 1,
       "evidence": [
         {
           "section": "6.3 上线验证与冒烟",
-          "quote": "1. `testdata/idea-repo` phase 1 退出 0。"
+          "quote": "1. `testdata/idea-repo` phase 1 退出 0。\n2. 真实 ideas 仓库 phase 1 退出 0（2026-11-03 为 9 篇）。\n3. `make check` 全绿，含 spec golden 与插件 shim 测试。"
         }
       ],
-      "rationale": "6.3 给出 3 条冒烟清单，并以退出 0、make check 全绿作为观察结果。",
+      "rationale": "有 3 条冒烟步骤，但只写退出 0/全绿，没有错误率、延迟等观察指标。",
       "missing": ""
     },
     {
       "id": "rollout.rollback_trigger",
       "status": "scored",
-      "level": 1,
+      "level": 2,
       "evidence": [
         {
           "section": "6.4 回滚与熔断",
-          "quote": "- 熔断触发：真实 ideas 仓库出现结构误报、插件 shim 或 release 冒烟失败、spec golden 回归。"
+          "quote": "- 熔断触发：真实 ideas 仓库出现结构误报、插件 shim 或 release 冒烟失败、spec golden 回归；真实语料 phase 1 耗时超过 1 秒（对应 NFR-2）也触发。"
         }
       ],
-      "rationale": "触发条件是可观测事件，但不是错误率/延迟等可观测数字阈值，未达 level 2。",
+      "rationale": "触发条件新增「phase 1 耗时超过 1 秒」的可观测数字，并对应 NFR-2。",
       "missing": ""
     },
     {
@@ -356,9 +398,13 @@
         {
           "section": "6.4 回滚与熔断",
           "quote": "- 回滚：移除 `.mdstandards.json` 或回退插件版本；spec 行为不受影响。"
+        },
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "- 触发后停止灰度，回退到上一插件版本；内容评分产物不阻断入库，不参与回滚判定。"
         }
       ],
-      "rationale": "给出可执行的具体回滚动作（移除配置或回退版本），不止「可以回滚」。",
+      "rationale": "给出移除配置或回退插件版本的具体动作，并说明触发后停止灰度。",
       "missing": ""
     },
     {
@@ -371,7 +417,7 @@
           "quote": "| Status Quo | 零改动 | 空壳想法继续入库，内容无标准 | 否决 |"
         }
       ],
-      "rationale": "Status Quo 行同时给出成本/风险（空壳入库、内容无标准）与结论。",
+      "rationale": "Status Quo 行写明零改动与「空壳想法继续入库，内容无标准」的成本。",
       "missing": ""
     },
     {
@@ -381,23 +427,27 @@
       "evidence": [
         {
           "section": "7. 替代方案与权衡",
+          "quote": "| 方案 B：声明式类型 schema | 类型系统更通用 | 重构大、测试迁移、过度抽象风险 | 延后 |"
+        },
+        {
+          "section": "7. 替代方案与权衡",
           "quote": "| 方案 C：独立 `mdstandards idea` 命令 | 不碰 spec policy | 解析重复、类型支持名义化 | 否决 |"
         }
       ],
-      "rationale": "方案 C 被否决，淘汰原因（解析重复、类型支持名义化）对应当前「复用评分引擎、不重复解析」的约束。",
+      "rationale": "方案 B/C 被否决，理由（重构大、解析重复）对应当前最小改动与 spec 不动约束。",
       "missing": ""
     },
     {
       "id": "alts.matrix",
       "status": "scored",
-      "level": 1,
+      "level": 2,
       "evidence": [
         {
           "section": "7. 替代方案与权衡",
-          "quote": "| 方案 A：类型配置 + 专用 Rego | 最小改动、spec 不动、规则集中在 policy | 第三种类型要再补代码 | **采用** |"
+          "quote": "| 方案 | 优点 | 缺点 | 结论 |\n|---|---|---|---|\n| Status Quo | 零改动 | 空壳想法继续入库，内容无标准 | 否决 |\n| 方案 A：类型配置 + 专用 Rego | 最小改动、spec 不动、规则集中在 policy | 第三种类型要再补代码 | **采用** |\n| 方案 B：声明式类型 schema | 类型系统更通用 | 重构大、测试迁移、过度抽象风险 | 延后 |\n| 方案 C：独立 `mdstandards idea` 命令 | 不碰 spec policy | 解析重复、类型支持名义化 | 否决 |"
         }
       ],
-      "rationale": "存在方案对比表，但列维度是通用「优点 / 缺点」，未按具体约束组织成权衡矩阵维度。",
+      "rationale": "表格按方案列出优点/缺点/结论，覆盖改动量、spec 影响与抽象风险。",
       "missing": ""
     },
     {
@@ -410,20 +460,28 @@
           "quote": "| 方案 A：类型配置 + 专用 Rego | 最小改动、spec 不动、规则集中在 policy | 第三种类型要再补代码 | **采用** |"
         }
       ],
-      "rationale": "采用方案 A 与 3.4 的关键选型、Goals 中 spec 不回归/类型配置方向一致。",
+      "rationale": "结论采用方案 A，与 3.4 选型及 G1/G2 的类型配置+专用 Rego 一致。",
       "missing": ""
     },
     {
       "id": "x.goals_trace",
       "status": "scored",
-      "level": 1,
+      "level": 2,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "规则见架构文档 §5.2。每条规则独立命中并带稳定的 rule ID：ID 格式与唯一性、日期格式与真实性、路径形状与目录一致性、状态枚举、tags 类型、标题非空、占位符残留、四个必需章节。"
+          "section": "4.8 内容评分",
+          "quote": "core 项：`claim.standalone`(w2)、`problem.trigger`(w2)、`next.testable`(w3)、`next.bounded`(w1)。"
+        },
+        {
+          "section": "4.2 结构规则",
+          "quote": "「外部的声音」是可选章节：整节缺失不报错；空正文也允许（与其他章节一致）；章节存在时，含 `optional:outside-voice` 哨兵的模板注释按 `idea.placeholder_remaining` 处理。"
+        },
+        {
+          "section": "6.2 数据迁移与兼容性",
+          "quote": "spec 的规则、退出码与 `-dump-corpus` 字节输出保持不变；idea 规则只在 `type=idea` 仓库生效。"
         }
       ],
-      "rationale": "G1/G2/G4/G5 可在第 4、6 章找到对应设计，但 G3「空正文/暂无 不误伤」在后续章节缺少明确对应说明。",
+      "rationale": "G1/G2 见 4.5/4.2，G3/G5 见 6.3/6.2，G4 见 4.8，G6 见 4.2，均可追溯。",
       "missing": ""
     },
     {
@@ -432,11 +490,15 @@
       "level": 2,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "- **单二进制、单主包**：不拆 `cmd/` + `internal/`，不新增运行时依赖。"
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-1 确定性**：同一语料、同一 policy 的 JSON 输出字节稳定；spec `-dump-corpus` 与改造前逐字节一致。"
+        },
+        {
+          "section": "3.4 关键选型与约束",
+          "quote": "- **配置 fail-closed**：`.mdstandards.json` 使用 `DisallowUnknownFields`；缺失、损坏、未知 type 或未知键都退出 2。"
         }
       ],
-      "rationale": "NFR-3 fail-closed、NFR-5 零依赖等与 3.4 选型、3.1 架构一致，未见矛盾。",
+      "rationale": "NFR-1/3/5 分别对应 6.2 的字节不变、3.4 的 fail-closed 与不新增依赖。",
       "missing": ""
     },
     {
@@ -445,11 +507,15 @@
       "level": 2,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "- 触发后停止灰度，回退到上一插件版本；内容评分产物不阻断入库，不参与回滚判定。"
+          "section": "6.1 发布与灰度",
+          "quote": "3. 插件版本升到 `0.2.0`，release tag 必须与 `plugin.json` 一致；先对 `testdata/idea-repo` 冒烟，再对真实 ideas 仓库灰度。"
+        },
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "- 回滚：移除 `.mdstandards.json` 或回退插件版本；spec 行为不受影响。"
         }
       ],
-      "rationale": "回滚动作与 6.1 的冒烟→灰度发布节奏对应，回退到上一插件版本与版本发布策略一致。",
+      "rationale": "回滚即撤销 6.1 的配置启用与插件升级，并停止灰度，二者一致。",
       "missing": ""
     },
     {
@@ -458,11 +524,11 @@
       "level": 2,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。"
+          "section": "2.1 目标",
+          "quote": "- **G3 记录不误伤**：空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。验收：`TestIdeaValidRepo` 与真实 ideas 语料（2026-11-03 实测 9 篇）phase 1 通过。"
         }
       ],
-      "rationale": "全文未出现 待补充/TBD 等占位作为实质回答；文中「暂无」是合法内容示例而非占位。",
+      "rationale": "「暂无」「……」仅作为允许内容的示例出现，全文未把 待补充/TBD 当实质回答。",
       "missing": ""
     },
     {
@@ -471,24 +537,24 @@
       "level": 2,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format table|json"
+          "section": "4.4 接口与协议",
+          "quote": "```bash\nmdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format table|json\n```"
         }
       ],
-      "rationale": "仅有一个 mermaid 拓扑图与一条 CLI 用法示例，没有实现代码、测试日志或偶发报错堆砌。",
+      "rationale": "代码块只有 mermaid 架构图与 CLI 用法，没有实现代码、测试日志或报错堆砌。",
       "missing": ""
     },
     {
       "id": "x.numbers_sourced",
       "status": "scored",
-      "level": 2,
+      "level": 1,
       "evidence": [
         {
-          "section": "全文",
-          "quote": "**NFR-2 性能**：9 篇 idea 的 phase 1 在 1 秒内完成（2026-11-03 在 Apple M2 / macOS 27.0.1 / arm64 实测 0.01s）；单文件上限沿用 1 MiB。"
+          "section": "1.2 核心技术痛点",
+          "quote": "证据：截至 2026-11-02，`~/Workspace/ideas` 有 5 篇想法；在没有结构闸门之前，`scripts/new` 建出的文件只保证 title/date/id 三项。2026-11-02 的冒烟测试对「万花筒」跑完 idea rubric，headline 25.0、diagnostic 35.0，证明内容评分链路能产出可审计的报告。"
         }
       ],
-      "rationale": "关键数字均带日期/实测上下文（5 篇、25.0/35.0、0.01s 等），未见未实测数字冒充已达成。",
+      "rationale": "冒烟分数与篇数只有日期，没有报告路径/链接；仅部分实测数字带环境说明。",
       "missing": ""
     },
     {
@@ -498,10 +564,10 @@
       "evidence": [
         {
           "section": "全文",
-          "quote": "  - docs/architecture/mdstandards-architecture.md"
+          "quote": "depends_on:\n  - docs/architecture/mdstandards-architecture.md"
         }
       ],
-      "rationale": "仅引用 depends_on 的架构文档与正文相对链接，未见伪造的 SPEC 引用或里程碑 M<N>（M2 为芯片型号）。",
+      "rationale": "只引用 depends_on 架构文档与设计记录，未出现 SPEC 编号或 M<N>。",
       "missing": ""
     }
   ]
