@@ -166,7 +166,8 @@ jobs:
               ./bin/doc-writer-tool mdstandards -root testdata/idea-repo -policy policy -phase 1 -format table)
           fi
           printf '%s\n' "$out"
-          printf '%s\n' "$out" | grep -q "scanned 2 documents, evaluated 0 edges"
+          want=$(find testdata/idea-repo -type f -name '*.md' | wc -l | tr -d ' ')
+          printf '%s\n' "$out" | grep -q "scanned $want documents, evaluated 0 edges"
 
       - name: taskscheck smoke
         env:

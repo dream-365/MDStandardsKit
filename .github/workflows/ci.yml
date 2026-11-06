@@ -27,6 +27,9 @@ jobs:
       - name: self-check
         run: ./mdstandards -root . -policy ./policy -phase 1 -format github
 
+      - name: idea corpus smoke
+        run: ./mdstandards -root ./testdata/idea-repo -policy ./policy -phase 1 -format github
+
       - name: build taskscheck
         run: go build -o taskscheck ./tools/taskscheck
 

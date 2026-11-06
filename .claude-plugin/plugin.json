@@ -1,7 +1,7 @@
 {
   "name": "doc-writer",
   "displayName": "doc-writer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "按 MDStandardsKit 规范起草、修订和检查技术 Spec 与 idea。",
   "author": {
     "name": "代码与咖啡渍"
