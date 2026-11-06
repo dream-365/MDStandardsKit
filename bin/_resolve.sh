@@ -129,11 +129,30 @@ case $_tool in
   taskscheck) _pkg="./tools/taskscheck" ;;
 esac
 
+# The fallback must report the same policy hash as a downloaded release asset.
+# Both paths use tools/policyhash so the algorithm cannot drift.
+_ldflags="-s -w -X main.version=$_version"
+_warning="doc-writer toolchain: warning: release asset not used; building $_tool $_version from source"
+case $_tool in
+  mdstandards|qualitycheck)
+    if ! _policy_hash=$(cd "$_root" && go run ./tools/policyhash policy); then
+      echo "doc-writer toolchain: cannot compute the policy hash for the build fallback" >&2
+      exit 2
+    fi
+    if [ "${#_policy_hash}" -ne 64 ]; then
+      echo "doc-writer toolchain: invalid policy hash for the build fallback: $_policy_hash" >&2
+      exit 2
+    fi
+    _ldflags="$_ldflags -X main.policyHash=$_policy_hash"
+    _warning="$_warning (policy $_policy_hash)"
+    ;;
+esac
+echo "$_warning" >&2
+
 _tmp=$(mktemp "$_cache/.build.XXXXXX") || {
   echo "doc-writer toolchain: mktemp failed in $_cache" >&2
   exit 2
 }
-_ldflags="-s -w -X main.version=$_version"
 if ! (cd "$_root" && CGO_ENABLED=0 go build -trimpath -ldflags="$_ldflags" -o "$_tmp" "$_pkg"); then
   rm -f "$_tmp"
   echo "doc-writer toolchain: go build failed for $_tool" >&2

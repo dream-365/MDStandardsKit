@@ -30,7 +30,7 @@ jobs:
             echo "tag $GITHUB_REF_NAME does not match plugin.json version $version" >&2
             exit 1
           fi
-          hash=$(find policy -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          hash=$(go run ./tools/policyhash policy)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "policy_hash=$hash" >> "$GITHUB_OUTPUT"
 
@@ -86,13 +86,30 @@ jobs:
             taskscheck-${{ matrix.goos }}-${{ matrix.goarch }}
 
   checksums:
-    needs: build
+    needs: [build, verify]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: release
           merge-multiple: true
+
+      - name: assert the built binaries report the policy hash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          POLICY_HASH: ${{ needs.verify.outputs.policy_hash }}
+        run: |
+          set -eu
+          chmod +x release/mdstandards-linux-amd64 release/qualitycheck-linux-amd64
+          for tool in mdstandards qualitycheck; do
+            out=$("./release/$tool-linux-amd64" --version)
+            echo "$out"
+            expected="$tool $VERSION policy $POLICY_HASH"
+            if [ "$out" != "$expected" ]; then
+              echo "unexpected --version output: want '$expected'" >&2
+              exit 1
+            fi
+          done
 
       - name: generate checksums
         run: |
@@ -107,7 +124,7 @@ jobs:
           path: release/checksums.txt
 
   smoke:
-    needs: checksums
+    needs: [checksums, verify]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -136,6 +153,7 @@ jobs:
         env:
           WITH_GO: ${{ matrix.with_go }}
           BASE_URL: file://${{ github.workspace }}/release
+          EXPECTED_POLICY_HASH: ${{ needs.verify.outputs.policy_hash }}
         run: |
           set -eu
           cache=$(mktemp -d)
@@ -149,7 +167,16 @@ jobs:
             version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json)
             test -x "$cache/mdstandards/$version/linux-amd64/mdstandards"
           fi
-          env XDG_CACHE_HOME="$cache" ./bin/doc-writer-tool mdstandards --version | grep -q "mdstandards ${GITHUB_REF_NAME#v}"
+          version_out=$(env XDG_CACHE_HOME="$cache" ./bin/doc-writer-tool mdstandards --version)
+          printf '%s\n' "$version_out"
+          printf '%s\n' "$version_out" | grep -Eq '^mdstandards [^ ]+ policy [0-9a-f]{64}$' || {
+            echo "mdstandards --version did not report a policy hash" >&2
+            exit 1
+          }
+          printf '%s\n' "$version_out" | grep -q "mdstandards ${GITHUB_REF_NAME#v} policy $EXPECTED_POLICY_HASH" || {
+            echo "mdstandards --version does not match the release build (want policy $EXPECTED_POLICY_HASH)" >&2
+            exit 1
+          }
 
       - name: idea corpus smoke
         env:

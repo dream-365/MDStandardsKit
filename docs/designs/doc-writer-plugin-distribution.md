@@ -129,12 +129,15 @@ resolve_and_exec "$@"
 
 1. `$MDSTANDARDS_BIN/<tool>`：已设置但文件不可执行 → 直接 exit 2，不回退，避免静默用错版本。
 2. `~/.cache/mdstandards/<version>/<os>-<arch>/<tool>`：命中即执行。
-3. 从 `${MDSTANDARDS_RELEASE_BASE_URL:-https://github.com/dream-365/MDStandardsKit/releases/download/v<version>}` 下载（设置 `MDSTANDARDS_SKIP_DOWNLOAD=1` 时跳过本步，直接进入第 4 步）：先 `mkdir -p <cache>`；取 `checksums.txt`，用 `awk '$2==asset{print $1}'` 按资产名匹配 sha256；下载到 `<cache>` 内的 `mktemp` 临时文件，`chmod 0755`，校验通过后同目录 `mv` 原子替换，最后执行。下载器优先 `curl -fL`，没有则 `wget -qO-`；校验器优先 `sha256sum`，没有则 `shasum -a 256`。
-4. `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w"` 兜底，要求 Go ≥ 1.27.1（`go.mod` 的 `go 1.27.1`），且需要模块网络或本地 module cache：
+3. 从 `${MDSTANDARDS_RELEASE_BASE_URL:-https://github.com/dream-365/MDStandardsKit/releases/download/v<version>}` 下载（设置 `MDSTANDARDS_SKIP_DOWNLOAD=1` 时跳过本步，直接进入第 4 步）：先 `mkdir -p <cache>`；取 `checksums.txt`，用 `awk '$2==asset{print $1}'` 按资产名匹配 sha256；下载到 `<cache>` 内的 `mktemp` 临时文件，`chmod 0755`，校验通过后同目录 `mv` 原子替换，最后执行。下载器优先 `curl -fL`，没有则 `wget -qO-`；校验器优先 `sha256sum`，没有则 `shasum -a 256`。下载不可用而落入第 4 步时，stderr 打印一行 warning 说明"未能下载 Release 资产，改用本地构建"以及构建出的 policy sha256；不允许静默降级——兜底产物与发布资产对用户必须可区分。
+4. `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=<version> -X main.policyHash=<policy-hash>"` 兜底，要求 Go ≥ 1.27.1（`go.mod` 的 `go 1.27.1`），且需要模块网络或本地 module cache：
    - `mdstandards`：在插件根执行 `-o <cache>/mdstandards .`
    - `qualitycheck`：在插件根执行 `-o <cache>/qualitycheck ./tools/qualitycheck`
+   - `<policy-hash>` 由仓库内唯一实现 `go run ./tools/policyhash policy` 计算，必须与 CI 的 `POLICY_HASH` 逐字节一致。
 
-两个工具增加 `--version`：输出发布版本 + policy sha256（构建时注入 policy 目录哈希），用于回答"这次检查用的是哪一版规范"。
+**policy sha256 定义**：取 `policy/` 下所有常规文件，按仓库相对路径（POSIX 分隔符）排序；对每个文件生成一行 `<文件 sha256>  <相对路径>\n`（sha256 与路径之间两个空格），按顺序拼成字节流；该字节流的 sha256 即 policy sha256。CI 与 shim 兜底构建共用 `tools/policyhash`，不得在 shell 里各写一份；同一份 policy 内容无论走 Release 下载还是本地构建，都必须得到同一个哈希。
+
+`--version`：`mdstandards`、`qualitycheck` 输出 `<tool> <version> policy <sha256>`（`taskscheck` 只输出版本），用于回答"这次检查用的是哪一版规范"。下载路径与兜底构建路径都必须输出 64 位小写 hex；只有未注入 ldflags 的开发者手工构建才允许 `policy unknown`。
 
 入口解析出的 `_root` 不依赖 `CLAUDE_PLUGIN_ROOT`/`CLAUDE_PLUGIN_DATA` 环境变量。`version` 从 `$_root/.claude-plugin/plugin.json` 用 `sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1` 读取。
 
@@ -223,6 +226,7 @@ claude plugin install doc-writer@mdstandards --scope user
 - 支持平台（darwin/arm64、darwin/amd64、linux/amd64、linux/arm64）上，无 Go 的机器首次调用 shim 能下载并通过 sha256 校验；`with-go` 腿通过 `MDSTANDARDS_SKIP_DOWNLOAD=1` 强制验证 build fallback；不支持平台给出受支持平台列表与手工构建指引并 exit 2。
 - framely：删除 `.claude/skills/doc-writer` 后，技能仍可用；架构文档转 `Approved`，第一份带真实 `depends_on` 的 Spec 跑 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0。`<plugin-root>` 由技能在执行时用 `${CLAUDE_PLUGIN_ROOT}` 内联替换。
 - CI 在 tag 与 `plugin.json.version` 不一致时失败；两个工具的四平台资产与 `checksums.txt` 都存在；`claude plugin validate .` 通过；smoke 在发布前通过；`doc-writer-tool mdstandards --version` 与 tag 一致并输出 policy sha256。
+- Release 构建完成后，在 CI 里直接执行本平台可运行的那个资产，断言 `--version` 为 `mdstandards <version> policy <64 位 hex>` 且 hex 等于 `verify` job 算出的 `POLICY_HASH`；smoke 的下载腿与 `with-go` 兜底腿都断言输出匹配 `policy [0-9a-f]{64}`，兜底腿还断言与发布资产同值。`scripts/shim-test.sh` 的 build fallback 用例同样断言 64 位 hex，防止再次静默回退到 `policy unknown`。
 - v0.1.0 验证同版本安装；从 v0.2.0 起，升级到新版本的"remove → add → install"序列和回滚序列都在 smoke 中实际跑过。
 
 ## Distribution Plan
@@ -678,6 +682,10 @@ Parallel lanes: spike → (move skill ∥ dispatcher) → release CI → framely
   - Surfaced by: Outside Voice F1/F2/F4, R3-9/R3-11.
   - Files: `README.md`, `TODOS.md`, `docs/designs/doc-writing-skill.md`.
   - Verify: `rg '.claude/skills/doc-writer|doc-writer-skill.tar.gz|VERSION'` has no live references.
+- [ ] **T8 (P1, human: ~1h / CC: ~15min)** — release — Embed the policy hash in the build fallback and assert it on both build paths.
+  - Surfaced by: v0.2.2 回归 — 用户机器 `~/.cache` 里的二进制来自 shim 兜底构建，`--version` 输出 `policy unknown`；GitHub Release 资产本身正确。
+  - Files: `tools/policyhash/**`, `bin/_resolve.sh`, `.github/workflows/release.yml`, `scripts/shim-test.sh`.
+  - Verify: 兜底构建与 Release 资产对同一 policy 输出相同 64 位 hex；`--version` 不再出现 `policy unknown`（未注入 ldflags 的开发构建除外）；CI 在下载腿或兜底腿缺少 policy hash 时失败。
 
 ## Unresolved decisions
 

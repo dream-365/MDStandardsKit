@@ -75,7 +75,8 @@ rm -rf "$cache"
 mkdir -p "$cache"
 out=$(XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 "$tool" mdstandards --version) ||
   fail "build fallback exited non-zero"
-printf '%s\n' "$out" | grep -q '^mdstandards ' || fail "build fallback did not execute the built tool"
+printf '%s\n' "$out" | grep -Eq '^mdstandards [^ ]+ policy [0-9a-f]{64}$' ||
+  fail "build fallback did not embed the policy hash"
 
 # 5. no Go and no download fails with a clear message
 safe="$work/safe"
