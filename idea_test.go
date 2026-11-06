@@ -60,6 +60,67 @@ func TestIdeaValidRepo(t *testing.T) {
 	}
 }
 
+func TestIdeaFixtureRepo(t *testing.T) {
+	code, out, errs := runCLI(t, "testdata/idea-repo", "-phase", "1", "-format", "json")
+	if code != 0 {
+		t.Fatalf("code=%d stdout=%s stderr=%s", code, out, errs)
+	}
+	rep := decodeReport(t, out)
+	if len(rep.Findings) != 0 {
+		t.Fatalf("unexpected findings: %+v", rep.Findings)
+	}
+}
+
+func TestIdeaOptionalVoiceSection(t *testing.T) {
+	std, err := loadStandard(policyDir(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var placeholder string
+	for _, m := range std.DocumentTypes["idea"].PlaceholderMarkers {
+		if strings.Contains(m, "outside-voice") {
+			placeholder = m
+			break
+		}
+	}
+	if placeholder == "" {
+		t.Fatal("standard.json has no placeholder marker for outside-voice")
+	}
+	base := ideaContent("AABBCCDD", "标题", "2026-11-01", "萌芽")
+	cases := []struct {
+		name     string
+		body     string
+		wantCode int
+		wantRule string
+	}{
+		{"absent", base, 0, ""},
+		{"filled", strings.Replace(base, "## 下一步", "## 外部的声音\n\n有人试过类似方案。\n\n## 下一步", 1), 0, ""},
+		{"placeholder remains", strings.Replace(base, "## 下一步", "## 外部的声音\n\n"+placeholder+"\n\n## 下一步", 1), 1, "idea.placeholder_remaining"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, root, ".mdstandards.json", ideaConfig)
+			writeFile(t, root, "2026/2026-11-01/a.md", tc.body)
+			code, out, errs := runCLI(t, root, "-phase", "1", "-format", "json")
+			if code != tc.wantCode {
+				t.Fatalf("code=%d want=%d stdout=%s stderr=%s", code, tc.wantCode, out, errs)
+			}
+			rep := decodeReport(t, out)
+			if tc.wantRule == "" {
+				if len(rep.Findings) != 0 {
+					t.Fatalf("unexpected findings: %+v", rep.Findings)
+				}
+				return
+			}
+			if !hasRule(rep, tc.wantRule) {
+				t.Fatalf("want rule %q, got %+v", tc.wantRule, rep.Findings)
+			}
+		})
+	}
+}
+
 func TestIdeaStructuralFindings(t *testing.T) {
 	cases := []struct {
 		name string

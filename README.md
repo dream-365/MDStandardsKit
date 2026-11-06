@@ -11,7 +11,7 @@
 doc-writer 和 idea-writer 技能随本仓库作为插件发布。安装固定版本：
 
 ```bash
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.1 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.2 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
@@ -19,7 +19,7 @@ claude plugin install doc-writer@mdstandards --scope user
 
 ```bash
 claude plugin marketplace remove mdstandards
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.1 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.2.2 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
@@ -66,7 +66,7 @@ make build
 | `idea.path_shape` / `idea.date_dir_mismatch` / `idea.year_dir_mismatch` | 路径不是 `YYYY/YYYY-MM-DD/<slug>.md`，或日期与目录对不上 |
 | `idea.status_invalid` | 状态不在 `萌芽 / 探索中 / 已落地 / 搁置` |
 | `idea.tags_invalid` | `tags` 不是字符串列表 |
-| `idea.heading_missing` | 缺少四个必需二级标题之一 |
+| `idea.heading_missing` | 缺少四个必需二级标题之一（可选的「外部的声音」不算） |
 | `idea.placeholder_remaining` | 模板 HTML 注释或 `id: ABCDEFGH` 未替换 |
 
 外加工程保障：策略加载失败即停、零受管文档即停、需要依赖图的类型零依赖边即停、未降级时解析失败即停。
@@ -83,6 +83,10 @@ make build
 文件路径固定为 `YYYY/YYYY-MM-DD/<slug>.md`。结构错误在记录时阻断；内容评分只诊断，不阻止入库。
 空正文、`暂无`、`目前说不清，因为……` 都是允许的。内容评分用 `skills/idea-writer/` 的 rubric，
 报告写到 `docs/quality/ideas/<id>/`，不进入受管文档。
+
+正文有四个必需章节（一句话描述、想法、为什么有意思、下一步），以及一个可选章节「外部的声音」。
+外部的声音可以整节省略；如果保留章节，模板注释必须替换，否则命中 `idea.placeholder_remaining`。
+它当前不进入 rubric，只作为评审上下文。
 
 ## 执行拆解 tasks.md
 

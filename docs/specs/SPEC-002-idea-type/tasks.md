@@ -4,8 +4,8 @@ status: Done
 owner: alang
 depends_on: []
 spec: ./spec.md
-spec_sha256: "52181d85687c1b9cc525c35fd0ca1799b695ec284f158af541e4146e3865fcdf"
-updated_at: 2026-11-03
+spec_sha256: "b22b25a5f6f2784fe3fb95cd115d216b462b4451192d919c5613b910606b6ea4"
+updated_at: 2026-11-06
 ---
 
 # SPEC-002 idea 类型 执行拆解
@@ -19,4 +19,6 @@ updated_at: 2026-11-03
 | T5 | 五篇校准与真人标签 | G4, G3 | T3, T4 | skills/idea-writer/idea/quality/calibration/ | 5 篇人工分诊标签已记录并留出 1 篇；校准引擎测试通过 | `go test ./tools/qualitycheck/... -run TestCalibrate` 与 `test -s skills/idea-writer/idea/quality/calibration/ideas.v1.yaml` |
 | T6 | spec 输出不回归 | G5 | T2, T3, T4 | testdata/spec-corpus.golden.json, idea_test.go | spec 的 `-dump-corpus` 与 golden 逐字节一致 | `go test ./... -run TestSpecDumpCorpusGolden` |
 | T7 | v0.2.0 发布与冒烟 | G5 | T5, T6 | .claude-plugin/plugin.json, .github/workflows/release.yml, README.md, docs/architecture/mdstandards-architecture.md | tag 与 plugin.json 版本一致；四平台资产与 checksums 齐全；冒烟安装通过；make check 绿 | `make check` 与 `sh ./scripts/shim-test.sh` |
-| T8 | 状态收口与独立质量复审 | G5 | T7 | spec.md, changelog.md, tasks.md, docs/specs/README.md, docs/quality/SPEC-002-idea-type/quality-findings.json, docs/quality/SPEC-002-idea-type/quality-report.md | spec 状态为 Implemented、tasks 状态为 Done、索引同步；qualitycheck 审计无 failure 且 target_sha256 与当前 spec 一致 | docs/quality/SPEC-002-idea-type/quality-report.md |
+| T8 | v1 状态收口与独立质量复审（2026-11-03） | G5 | T7 | spec.md, changelog.md, tasks.md, docs/specs/README.md, docs/quality/SPEC-002-idea-type/quality-findings.json, docs/quality/SPEC-002-idea-type/quality-report.md | v1 的 spec 状态为 Implemented、tasks 状态为 Done、索引同步；qualitycheck 审计无 failure 且 target_sha256 与 v1 spec 一致 | docs/quality/SPEC-002-idea-type/quality-report.md |
+| T9 | 可选「外部的声音」章节 | G6 | T3, T4, T6, T7 | policy/data/standard.json, skills/idea-writer/SKILL.md, skills/idea-writer/idea/quality/reviewer.md, testdata/idea-repo/2026/2026-11-01/optional-voice.md, idea_test.go, README.md, docs/architecture/mdstandards-architecture.md | 模板注释加入 `placeholder_markers`；整节缺失退出 0；空正文允许；保留占位注释命中 `idea.placeholder_remaining`；真实 ideas 语料 phase 1 退出 0 | `go test ./... -run 'TestIdeaValidRepo\|TestIdeaFixtureRepo\|TestIdeaOptionalVoiceSection'` 与 `./mdstandards -root ~/Workspace/ideas -policy ./policy -phase 1` |
+| T10 | 2026-11-06 修订的独立复审与收口 | G4, G6 | T8, T9 | spec.md, changelog.md, tasks.md, docs/quality/SPEC-002-idea-type/quality-findings.json, docs/quality/SPEC-002-idea-type/quality-report.md | 新 findings 的 target_sha256 与当前 spec 一致；qualitycheck 审计无 failure；spec 重新批准后状态回到 Implemented、tasks 回到 Done | docs/quality/SPEC-002-idea-type/quality-report.md |

@@ -4,7 +4,7 @@ status: Implemented
 owner: alang
 depends_on:
   - docs/architecture/mdstandards-architecture.md
-updated_at: 2026-11-03
+updated_at: 2026-11-06
 ---
 
 # MDStandardsKit idea 类型 技术方案
@@ -22,7 +22,7 @@ updated_at: 2026-11-03
 
 ### 1.1 系统现状
 
-`~/Workspace/ideas` 是一个独立的想法记录库。一个想法一个文件，路径为 `YYYY/YYYY-MM-DD/<slug>.md`，frontmatter 有 `id`、`title`、`date`、`tags`、`status`，正文有四个二级标题：一句话描述、想法、为什么有意思、下一步。
+`~/Workspace/ideas` 是一个独立的想法记录库。一个想法一个文件，路径为 `YYYY/YYYY-MM-DD/<slug>.md`，frontmatter 有 `id`、`title`、`date`、`tags`、`status`，正文有四个必需二级标题：一句话描述、想法、为什么有意思、下一步。模板另提供一个可选二级标题「外部的声音」，用于记录外部反馈、同类尝试、反例或行业标准。
 
 `scripts/new` 负责建文件、生成 8 位大写 ID、校验标题非空、校验日期格式与 ID 唯一。它不检查章节是否存在、占位符是否替换、状态是否合法、日期与目录是否一致，也不评价内容。
 
@@ -59,6 +59,7 @@ updated_at: 2026-11-03
 - **G3 记录不误伤**：空正文、`暂无`、`目前说不清，因为……` 不产生结构 finding。验收：`TestIdeaValidRepo` 与真实 ideas 语料（2026-11-03 实测 9 篇）phase 1 通过。
 - **G4 内容评分**：rubric 四个 core 项计算「推进就绪度」，成熟度和「非显而易见」只做诊断；独立 reviewer 先盲读再评分；`qualitycheck` 复算分数并验证逐字证据。验收：`-validate-rubric`、万花筒冒烟报告。
 - **G5 spec 不回归**：spec 的 `-dump-corpus` 输出逐字节不变；`make check` 全绿。验收：`TestSpecDumpCorpusGolden`、`make check`。
+- **G6 可选外部声音**：模板在「为什么有意思」与「下一步」之间提供可选章节「外部的声音」；整节缺失不产生 finding；空正文允许（与其他章节一致）；保留含 `optional:outside-voice` 哨兵的模板注释则命中 `idea.placeholder_remaining`。验收：`TestIdeaOptionalVoiceSection`。
 
 ### 2.2 非目标
 
@@ -67,10 +68,13 @@ updated_at: 2026-11-03
 - **NG3** 自动改写想法内容（本次不做；评分只提示）。
 - **NG4** Windows 分发（本次不做）。
 - **NG5** 内容分作为阻断门槛（本次不做；v0.2.0 只诊断）。
+- **NG6** 「外部的声音」不进入 rubric 或 headline（本次不做；只作为评审上下文）。
 
 ## 3. 架构设计与核心方案
 
 ### 3.1 总体架构
+
+全局结构与模块职责见 [架构文档](../../architecture/mdstandards-architecture.md)；本节只描述 idea 类型变更范围内的数据流。
 
 ```mermaid
 flowchart LR
@@ -131,7 +135,7 @@ flowchart LR
 
 ### 4.2 结构规则
 
-规则见架构文档 §5.2。每条规则独立命中并带稳定的 rule ID：ID 格式与唯一性、日期格式与真实性、路径形状与目录一致性、状态枚举、tags 类型、标题非空、占位符残留、四个必需章节。
+规则见架构文档 §5.2。每条规则独立命中并带稳定的 rule ID：ID 格式与唯一性、日期格式与真实性、路径形状与目录一致性、状态枚举、tags 类型、标题非空、占位符残留、四个必需章节。「外部的声音」是可选章节：整节缺失不报错；空正文也允许（与其他章节一致）；章节存在时，含 `optional:outside-voice` 哨兵的模板注释按 `idea.placeholder_remaining` 处理。
 
 ### 4.3 数据模型与契约
 
@@ -187,7 +191,7 @@ mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format t
 - rubric：`skills/idea-writer/idea/quality/rubric.v1.yaml`。
 - core 项：`claim.standalone`(w2)、`problem.trigger`(w2)、`next.testable`(w3)、`next.bounded`(w1)。
 - headline：0–100，三档 0–39 / 40–69 / 70–100；成熟度和 `why` 只做诊断。
-- 独立 reviewer 先只读 title + 一句话描述，写 `guess`，再读正文；`qualitycheck` 验证证据存在和分数算术，不验证盲读是否真实。
+- 独立 reviewer 先只读 title + 一句话描述，写 `guess`，再读正文（含可选的「外部的声音」）；`qualitycheck` 验证证据存在和分数算术，不验证盲读是否真实。
 - 校准：`calibration/ideas.v1.yaml` 记录 5 篇人工分诊标签，留 1 篇；比较按「推进 vs 不推进」二分，至少 3/5 一致。
 
 ## 5. 非功能性需求
@@ -215,13 +219,13 @@ mdstandards -root ~/Workspace/ideas -policy <plugin>/policy -phase 0|1 -format t
 ### 6.3 上线验证与冒烟
 
 1. `testdata/idea-repo` phase 1 退出 0。
-2. 真实 ideas 仓库 phase 1 退出 0（2026-11-03 为 8 篇）。
+2. 真实 ideas 仓库 phase 1 退出 0（2026-11-03 为 9 篇）。
 3. `make check` 全绿，含 spec golden 与插件 shim 测试。
 
 ### 6.4 回滚与熔断
 
 - 回滚：移除 `.mdstandards.json` 或回退插件版本；spec 行为不受影响。
-- 熔断触发：真实 ideas 仓库出现结构误报、插件 shim 或 release 冒烟失败、spec golden 回归。
+- 熔断触发：真实 ideas 仓库出现结构误报、插件 shim 或 release 冒烟失败、spec golden 回归；真实语料 phase 1 耗时超过 1 秒（对应 NFR-2）也触发。
 - 触发后停止灰度，回退到上一插件版本；内容评分产物不阻断入库，不参与回滚判定。
 
 ## 7. 替代方案与权衡
