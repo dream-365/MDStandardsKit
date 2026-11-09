@@ -5,7 +5,7 @@ Branch: main
 Repo: MDStandardsKit
 Status: APPROVED
 Mode: Builder
-Supersedes: alang-main-design-20261101-154404.md (extends that design; content-quality enforcement was deferred there as S3)
+Supersedes: maintainer-main-design-20261101-154404.md (extends that design; content-quality enforcement was deferred there as S3)
 
 ## Problem Statement
 
@@ -178,7 +178,7 @@ v1 目标约 30 条 item，跨 11 个维度：
       "evidence": [
         {
           "section": "1.2 核心技术痛点",
-          "quote": "截至 2026-11-01，在 /Users/alang/Workspace（排除本仓库、.claude 技能目录与 crawlers/ 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 depends_on"
+          "quote": "截至 2026-11-01，在 <workspace>（排除本仓库、.claude 技能目录与 crawlers/ 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 depends_on"
         }
       ],
       "rationale": "给出了可核实的度量与出处，且与失败链第 3 步直接对应。",
@@ -256,7 +256,7 @@ D1 决定：`gold.v1.json`、`-calibrate`、`-report-threshold`、`-enforce-thre
 2. 维度权重与 item 权重先用关键性初值；只有 gold set 能定，不要在 v1 假装精确。
 3. `na` 的边界：`na` 只对 extended item 开放；core item 用"说明不适用"作为可评分内容，而不是 `na`。
 4. 架构文档与 ADR 是否也进评分卡？v1 不做。
-5. 旧 Spec 的标题别名表要覆盖多少种写法？v1 先覆盖本仓库与 framely 的真实标题，再按需扩。
+5. 旧 Spec 的标题别名表要覆盖多少种写法？v1 先覆盖本仓库与 target-repo 的真实标题，再按需扩。
 
 ## Success Criteria
 

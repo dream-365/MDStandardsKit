@@ -1,7 +1,7 @@
 ---
 type: architecture
 status: Approved
-owner: alang
+owner: example
 depends_on: []
 ---
 

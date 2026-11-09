@@ -4,14 +4,14 @@
       "path": "docs/architecture/example-architecture.md",
       "type": "architecture",
       "status": "Approved",
-      "owner": "alang",
+      "owner": "example",
       "depends_on": []
     },
     {
       "path": "docs/specs/example-spec.md",
       "type": "spec",
       "status": "Approved",
-      "owner": "alang",
+      "owner": "example",
       "depends_on": [
         "docs/architecture/example-architecture.md"
       ]

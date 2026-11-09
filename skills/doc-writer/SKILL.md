@@ -1,11 +1,11 @@
 ---
 name: doc-writer
-description: 按 framely 的 Spec 规范起草、修订和检查技术规格说明书。用于写新 Spec、修改已批准的 Spec、或在评审前检查背景、痛点与方案是否写清楚。不要用于里程碑纪要、README、ADR 或其他非 Spec 文档。
+description: 按本仓库的 Spec 规范起草、修订和检查技术规格说明书。用于写新 Spec、修改已批准的 Spec、或在评审前检查背景、痛点与方案是否写清楚。不要用于里程碑纪要、README、ADR 或其他非 Spec 文档。
 ---
 
 # doc-writer
 
-把 framely 的 Spec 写作规范编译成一条可执行流程：先问清背景与痛点，再按固定骨架起草，最后用 mdstandards 过元数据闸门，并用 taskscheck 检查执行拆解。
+把本仓库的 Spec 写作规范编译成一条可执行流程：先问清背景与痛点，再按固定骨架起草，最后用 mdstandards 过元数据闸门，并用 taskscheck 检查执行拆解。
 
 ## 适用范围
 

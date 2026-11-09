@@ -5,7 +5,7 @@ Branch: main
 Repo: dream-365/MDStandardsKit
 Status: APPROVED
 Mode: Builder
-Supersedes: 不整体取代；延续 `alang-main-design-20261101-200200.md`（Spec 内容质量评分卡）的评分骨架，新增 idea 文档类型。明确取代 2026-11-01 Eng review 的「Spec-only v1」范围决定：本次新增 idea 类型。
+Supersedes: 不整体取代；延续 `maintainer-main-design-20261101-200200.md`（Spec 内容质量评分卡）的评分骨架，新增 idea 文档类型。明确取代 2026-11-01 Eng review 的「Spec-only v1」范围决定：本次新增 idea 类型。
 
 ## Problem Statement
 
@@ -388,7 +388,7 @@ Complexity: ~15 files, 0 new services. D1 confirmed the original arrangement; sc
 `REALITY: already-done pass no existing idea-type implementation; plugin distribution shipped in e0946d0`
 `REALITY: surface-check pass mdstandards flags verified in main.go:30-42; qualitycheck flags verified in tools/qualitycheck/main.go:21-33`
 `REALITY: binding-decisions finding prior "Spec-only v1" and docs/quality path required explicit supersession; design updated at docs/designs/idea-document-type.md:8,100`
-`REALITY: numbers finding calibration set is 5 ideas (/Users/alang/Workspace/ideas/2026/**/*.md); 60s fallback is an estimate at docs/designs/idea-document-type.md:100`
+`REALITY: numbers finding calibration set is 5 ideas (<workspace>/ideas/2026/**/*.md); 60s fallback is an estimate at docs/designs/idea-document-type.md:100`
 `REALITY: deferred-asks pass no linked issue in the design; docs/designs/idea-document-type.md:10-18`
 `REALITY: pr-count pass one PR per wave; no .gstack/ship-policy.json; docs/designs/idea-document-type.md:122-128`
 
@@ -445,7 +445,7 @@ CODE PATHS                                             USER FLOWS
 
 COVERAGE: 1/28 planned paths have an existing relevant test (spec corpus); 0/9 user-flow/idea paths. Every new behavior below needs a test.
 
-Required tests (Test Plan Artifact: `~/.gstack/projects/MDStandardsKit/alang-main-eng-review-test-plan-20261102-121636.md`):
+Required tests (Test Plan Artifact: `<state-root>/projects/MDStandardsKit/maintainer-main-eng-review-test-plan-20261102-121636.md`):
 
 - **T1 [CRITICAL 9/10]** `main_test.go` — config failure modes: missing file → spec default; malformed JSON, unknown type, unknown keys → exit 2.
 - **T2 [CRITICAL 9/10]** `main_test.go` — spec `-dump-corpus` byte-identical regression; `make check` green.
@@ -506,7 +506,7 @@ Cross-model synthesis: the outside voice confirmed the rubric/date-layout correc
   - Verify: `-validate-rubric`; ≥3/5 triage-label agreement; held-out idea reported separately.
 - [ ] **T6 (P2, human: ~3h / CC: ~20min)** — idea-writer skill — wire capture flow, async scoring, and `scripts/new` gate.
   - Surfaced by: Recommended Approach 6/7 / Outside #5.
-  - Files: `skills/idea-writer/SKILL.md`, `/Users/alang/Workspace/ideas/scripts/new`, `/Users/alang/Workspace/ideas/CLAUDE.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`.
+  - Files: `skills/idea-writer/SKILL.md`, `<workspace>/ideas/scripts/new`, `<workspace>/ideas/CLAUDE.md`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`.
   - Verify: manual "记一下" acceptance; direct `scripts/new` runs the gate when the tool is available.
 - [ ] **T7 (P2, human: ~1h / CC: ~10min)** — qualitycheck label — parameterize report title/target or wrap it.
   - Surfaced by: Scope S5 / Architecture A5.

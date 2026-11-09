@@ -16,7 +16,7 @@ Mode: Builder
 
 真正的失败点不在方案章节的文采，而在更早：背景没交代清楚、痛点没分析到位，Agent 就写出了一个结构漂亮、但解决错问题的方案。用户的评审顺序就是证据：背景 → 痛点 → 方案。
 
-现有规范是 `framely/docs/specs` 下的 1 篇总纲加 8 篇章节指南，约 820 行 prose。Agent 读它不稳定：每次读到的重点不同，产出就不同。规范本身还在演进，但没有可执行的检查。
+现有规范是 `target-repo/docs/specs` 下的 1 篇总纲加 8 篇章节指南，约 820 行 prose。Agent 读它不稳定：每次读到的重点不同，产出就不同。规范本身还在演进，但没有可执行的检查。
 
 ## What Makes This Cool
 
@@ -27,7 +27,7 @@ Mode: Builder
 ## Constraints
 
 - 技能放在 MDStandardsKit，随工具分发。
-- 规范搬进技能，`framely/docs/specs` 只留指针，不再保留第二份权威文本。
+- 规范搬进技能，`target-repo/docs/specs` 只留指针，不再保留第二份权威文本。
 - v1 覆盖两类文档：技术 Spec、里程碑纪要。
 - 路由必须是数据契约（注册表），不能是 `SKILL.md` 里的一段散文。
 - 项目专属约定（目录、命名、状态、changelog、commit 粒度）放在 profile，核心保持通用。
@@ -54,7 +54,7 @@ Mode: Builder
 
 ### Approach B: 注册表 + 项目 profile（已选）
 
-`routes.json` 声明每类的意图、必读 references、模板与校验；`SKILL.md` 只做分派；framely 的路径与约定放 `profiles/framely.yaml`。
+`routes.json` 声明每类的意图、必读 references、模板与校验；`SKILL.md` 只做分派；target-repo 的路径与约定放 `profiles/target-repo.yaml`。
 
 ### Approach C: 类型即独立包
 
@@ -76,7 +76,7 @@ B。核心理由：路由接口只有在它是数据契约时才可扩展；注�
 ├── SKILL.md
 ├── routes.json
 ├── profiles/
-│   └── framely.yaml
+│   └── target-repo.yaml
 ├── references/
 │   ├── _gates.md
 │   ├── spec.md
@@ -151,10 +151,10 @@ tools/doccheck/            # 在点目录之外，go test ./... 与 CI 能跑到
 - profile 里的路径相对目标根目录；技能自身的 assets 相对技能目录。
 - 找不到 profile 时中止，不猜。
 
-### profiles/framely.yaml
+### profiles/target-repo.yaml
 
 ```yaml
-name: framely
+name: target-repo
 spec:
   root: docs/specs
   dir_pattern: "SPEC-{nnn}-{kebab}"
@@ -176,9 +176,9 @@ checks:
     baseline: "${MDSTANDARDS_BASELINE:-policy/baseline.json}"
 ```
 
-`dependable_statuses` 从 policy 读取，profile 只声明本仓 Spec 允许使用哪几个：`allowed` 必须同时是 `policy.dependable_statuses` 和 `profile.statuses` 的子集。`Published` 仍留在 policy 里供架构文档使用，但不进入 framely Spec 的依赖判定。
+`dependable_statuses` 从 policy 读取，profile 只声明本仓 Spec 允许使用哪几个：`allowed` 必须同时是 `policy.dependable_statuses` 和 `profile.statuses` 的子集。`Published` 仍留在 policy 里供架构文档使用，但不进入 target-repo Spec 的依赖判定。
 
-`policy_dir` 的解析顺序：`MDSTANDARDS_POLICY_DIR` 环境变量 → 技能分发包自带的 `policy/` → 目标仓库根目录的 `policy/`。framely 在 v1 不自带 policy，安装说明要求把 `MDSTANDARDS_POLICY_DIR` 指向 MDStandardsKit checkout 或解压后的分发包。`tools/doccheck -profile` 校验解析后的目录包含 `data/standard.json` 与至少一个 `.rego`，否则失败。
+`policy_dir` 的解析顺序：`MDSTANDARDS_POLICY_DIR` 环境变量 → 技能分发包自带的 `policy/` → 目标仓库根目录的 `policy/`。target-repo 在 v1 不自带 policy，安装说明要求把 `MDSTANDARDS_POLICY_DIR` 指向 MDStandardsKit checkout 或解压后的分发包。`tools/doccheck -profile` 校验解析后的目录包含 `data/standard.json` 与至少一个 `.rego`，否则失败。
 
 ### 规则清单与迁移映射
 
@@ -194,13 +194,13 @@ checks:
 | 6 | 不把测试日志、偶发报错堆进背景 | CLAUDE.md §1.6 | `references/spec.md`（advisory） |
 | 7 | 不写具体实现代码；允许抽象类与接口 | CLAUDE.md §1.7 | `references/spec.md`（advisory） |
 | 8 | Spec 里程碑无关：目录、标题、正文不出现 M<N> | CLAUDE.md §1.8 | `references/spec.md`；`checks/spec.json` no_milestone_ids |
-| 9 | 目录 `SPEC-<三位数字>-<kebab>/`，含 spec.md、changelog.md、assets/、schemas/ | CLAUDE.md §3.1 | `profiles/framely.yaml` + `references/spec.md`（advisory，不做机器检查） |
+| 9 | 目录 `SPEC-<三位数字>-<kebab>/`，含 spec.md、changelog.md、assets/、schemas/ | CLAUDE.md §3.1 | `profiles/target-repo.yaml` + `references/spec.md`（advisory，不做机器检查） |
 | 10 | `docs/specs/README.md` 索引同步 | CLAUDE.md §3.1 | `references/spec.md`（advisory，不做机器检查） |
 | 11 | Deprecated / Superseded 移到 `docs/specs/archive/` | CLAUDE.md §3.1 | `references/spec.md` + profile 的 archive 路径（advisory） |
 | 12 | Changelog 触发条件与格式 | CLAUDE.md §3.2 | `templates/spec/changelog.md.tmpl` + `references/spec.md`（advisory；是否更新由作者判断，不做机器检查） |
 | 13 | 状态生命周期与强回退 | CLAUDE.md §3.3 | `references/spec.md` + profile statuses（advisory；回退判断需要 git 历史，不做机器检查） |
 | 14 | 修改后更新 Updated At | CLAUDE.md §3.3.3 | `checks/spec.json` updated_at（frontmatter 日期格式） |
-| 15 | 一个 commit 只涉及一个 Spec | CLAUDE.md §3.3.4 | `profiles/framely.yaml` commit_granularity（advisory） |
+| 15 | 一个 commit 只涉及一个 Spec | CLAUDE.md §3.3.4 | `profiles/target-repo.yaml` commit_granularity（advisory） |
 | 16 | 标题公式与元数据字段 | title_and_metadata.md | `references/spec.md`；`checks/spec.json` metadata |
 | 17 | 背景四维：现状、痛点、触发点、约束 | background.md | `references/spec.md` §1.1-1.4；`checks/spec.json` background_11 / background_12 / background_13 / background_14 |
 | 18 | Goals 3-6 个、SMART；Non-Goals 分类 | gobals_and_non_goals.md | `references/spec.md` §2；`checks/spec.json` goals_nonempty / non_goals_nonempty；3-6 个上限为 advisory |
@@ -316,8 +316,8 @@ check JSON 的 schema：
 
 - 技能提交在 MDStandardsKit 的 `.claude/skills/doc-writer/`，检查器在 `tools/doccheck/`。
 - **受管 glob 收窄**：`policy/data/standard.json` 的 `governed_globs` 改为 `["docs/specs/SPEC-*/spec.md", "docs/architecture/**/*.md"]`。`changelog.md`、`assets/`、`reference/`、`CLAUDE.md`、`.drafts/` 都不进入受管语料。这样迁移后的指针文件与 changelog 不会制造 extract error。
-- **状态对齐**：policy 的 `dependable_statuses` 改为 `["Approved", "Implemented", "Published"]`，`Published` 保留给架构文档；framely profile 的 `allowed` 是 `["Approved", "Implemented"]`。`tools/doccheck -profile` 断言 `allowed ⊆ policy.dependable_statuses` 且 `allowed ⊆ profile.statuses`。
-- `framely/docs/specs/CLAUDE.md` 替换为 10 行以内的指针：说明规范已迁入技能，给出技能路径与 profile 位置。指针在受管 glob 之外，不参与闸门。
+- **状态对齐**：policy 的 `dependable_statuses` 改为 `["Approved", "Implemented", "Published"]`，`Published` 保留给架构文档；target-repo profile 的 `allowed` 是 `["Approved", "Implemented"]`。`tools/doccheck -profile` 断言 `allowed ⊆ policy.dependable_statuses` 且 `allowed ⊆ profile.statuses`。
+- `target-repo/docs/specs/CLAUDE.md` 替换为 10 行以内的指针：说明规范已迁入技能，给出技能路径与 profile 位置。指针在受管 glob 之外，不参与闸门。
 - 旧 `reference/tech_specs/*.md` 归档到 `docs/specs/archive/reference/`，该路径不在受管 glob 内。归档保留人类可读的推理与反例。
 - 其他仓库采用方式：复制 `.claude/skills/doc-writer/`、`tools/doccheck/` 与 `policy/`，然后写自己的 profile；设置 `MDSTANDARDS_POLICY_DIR` 指向 `policy/` 或把 `policy/` 放到目标根目录。后续可以加 `mdstandards init` 子命令，v1 不做。
 - CI 增加：`go test ./...`（含 doccheck 测试）、`go run ./tools/doccheck -routes ...`、`go run ./tools/doccheck -profile ...`、模板占位符残留检查。
@@ -342,7 +342,7 @@ check JSON 的 schema：
 - 同一份 brief 连续生成两次，章节骨架逐字一致，差异只在内容。
 - 每份生成的 Spec 都有非空背景、1.2 痛点证据、非空 Goals、非空且标注本次/永远的 Non-Goals、含 Status Quo 的备选方案、回滚触发条件。Goals 的验收方式与痛点的证据强度由评审确认，check 只保证章节存在且非空。
 - 生成的 Spec 通过 `block_check`（`spec.md` 受管；`changelog.md` 不受管，由模板与人工核对）：exit 0，或 exit 1 且每条 finding 与 `policy/baseline.json` 精确匹配。
-- 迁移后 `mdstandards -phase 1` 在 framely 上干净：`governed_globs` 收窄后不再对指针、changelog、reference 报 extract error。
+- 迁移后 `mdstandards -phase 1` 在 target-repo 上干净：`governed_globs` 收窄后不再对指针、changelog、reference 报 extract error。
 - 生成一份真实的里程碑纪要，通过 `checks/milestone.json`：五章齐全、决策带理由、In/Out Scope 成对、Backlog 表有 Issue 列且非空、DoD 可观测。In Scope 与 Backlog 行的逐项对应由评审确认。
 - 新增第三种文档类型只需要加一条 route 加一套资产，不改 `SKILL.md`。
 - `doccheck -routes` 在缺模板、缺 reference、缺 check、缺 block_check 时直接失败。
@@ -359,10 +359,10 @@ check JSON 的 schema：
 
 ## Next Steps
 
-1. 写 `routes.json`、`profiles/framely.yaml` 与 `checks/*.json` 的 schema，落地 `tools/doccheck` 的三种模式。
+1. 写 `routes.json`、`profiles/target-repo.yaml` 与 `checks/*.json` 的 schema，落地 `tools/doccheck` 的三种模式。
 2. 按规则映射表编译 Spec 模块：`_gates.md`、`spec.md`、`spec.md.tmpl`、`changelog.md.tmpl`、`checks/spec.json`。
 3. 按规则映射表编译 Milestone 模块：`milestone.md`、`milestone.md.tmpl`、`checks/milestone.json`。
-4. 收窄 `policy/data/standard.json` 的 `governed_globs`，对齐 `dependable_statuses`，加 `policy/baseline.json`；为 framely 设置 `MDSTANDARDS_POLICY_DIR` 或把 `policy/` 放到目标根目录。
+4. 收窄 `policy/data/standard.json` 的 `governed_globs`，对齐 `dependable_statuses`，加 `policy/baseline.json`；为 target-repo 设置 `MDSTANDARDS_POLICY_DIR` 或把 `policy/` 放到目标根目录。
 5. 把 `docs/specs/CLAUDE.md` 改成指针，旧 reference 归档到 `docs/specs/archive/reference/`。
 6. 用一份真实 Spec brief 与一份真实 Milestone brief 各跑一遍生成，再跑 `block_check` 与 `doccheck`，把结果记进验收。
 
@@ -413,7 +413,7 @@ Stop: CONVERGENCE
 
 **Problem**
 
-> `profiles/framely.yaml` declares `policy_dir: policy`, `standard_json: policy/data/standard.json`, `baseline: policy/baseline.json`, and `dependable_statuses_source: policy/data/standard.json`, and the profile-resolution rule makes those paths relative to the target repository root. The framely target has no `policy/` bundle (`/Users/alang/Workspace/framely/policy/data/standard.json` does not exist); the policy being edited is `MDStandardsKit/policy/`, and neither the release asset (`doc-writer-skill.tar.gz` contains only the skill) nor the copy instructions include it. As written, `doccheck -profile`, `block_check -baseline`, and dependable-status reading fail at policy load with exit 2 before any document is checked.
+> `profiles/target-repo.yaml` declares `policy_dir: policy`, `standard_json: policy/data/standard.json`, `baseline: policy/baseline.json`, and `dependable_statuses_source: policy/data/standard.json`, and the profile-resolution rule makes those paths relative to the target repository root. The target-repo target has no `policy/` bundle (`<workspace>/target-repo/policy/data/standard.json` does not exist); the policy being edited is `MDStandardsKit/policy/`, and neither the release asset (`doc-writer-skill.tar.gz` contains only the skill) nor the copy instructions include it. As written, `doccheck -profile`, `block_check -baseline`, and dependable-status reading fail at policy load with exit 2 before any document is checked.
 
 **Remedy**
 
@@ -463,7 +463,7 @@ Stop: CONVERGENCE
 
 **Problem**
 
-> The migration table says rule 11 is carried by `references/spec.md` and 'profile 的 archive 路径', but `profiles/framely.yaml` has no archive path key (only spec root, dir pattern, file names, statuses, and commit granularity). The acceptance artifact names a destination that does not exist.
+> The migration table says rule 11 is carried by `references/spec.md` and 'profile 的 archive 路径', but `profiles/target-repo.yaml` has no archive path key (only spec root, dir pattern, file names, statuses, and commit granularity). The acceptance artifact names a destination that does not exist.
 
 **Remedy**
 
@@ -547,14 +547,14 @@ Stop: CONVERGENCE
 
 **R1-17 → R2-4 (persisting)**
 
-> The profile now splits `policy_dir` and `standard_json` and states a resolution base, but that base is the target root: `profiles/framely.yaml` points `policy_dir`/`baseline`/`dependable_statuses_source` at `policy/...`, while the framely target has no `policy/` bundle; the shared bundle lives in MDStandardsKit and is not shipped.
+> The profile now splits `policy_dir` and `standard_json` and states a resolution base, but that base is the target root: `profiles/target-repo.yaml` points `policy_dir`/`baseline`/`dependable_statuses_source` at `policy/...`, while the target-repo target has no `policy/` bundle; the shared bundle lives in MDStandardsKit and is not shipped.
 
 ### Unresolved at the cap
 
 1. R2-1 — consistency (blocking): The Spec module instructs each Non-Goal to be marked `本次不做`, `永远不做`, or `留待 M<N>`, but the same design's rule mapping row 8 and the `checks/spec.json no_milestone_ids` check require Spec directories, titles, and body text to contain no `M<N>` (the existing guide forbids milestone numbers in the body). A generated Spec that follows the module therefore fails its own check, and the migration's claimed preservation of the milestone-agnostic rule is contradicted.
 2. R2-2 — feasibility (blocking): The migration table assigns `checks/spec.json` the IDs `layout`, `readme_index`, `spec_links_resolve`, `status_rollback`, `changelog_format`, `updated_at`, and a bounded `goals` (3-6) check, but `doccheck` only runs `-doc <path> -check <check.json>` with `heading`/`frontmatter`/`regex` selectors and `non_empty`/`matches`/`exists`/`count_at_least` expectations. It cannot inspect a directory layout, resolve links or index entries in other files, read git history for status rollback, target the sibling `changelog.md` from the spec route, or enforce an upper bound. Those mapped rules therefore have no executable destination, contradicting the success criterion that all 23 rules have one and the constraint that checks be executable and reproducible.
 3. R2-3 — feasibility (blocking): The milestone rule that every In Scope item has at least one Backlog row with an Issue number or link is a per-item correlation between a dynamic list and table rows. The defined checker has only `heading`/`frontmatter`/`regex` selectors and `non_empty`/`matches`/`exists`/`count_at_least` expectations, with no table-row or correlation support, so `checks/milestone.json` cannot enforce it. The success criterion that a real milestone passes this rule is unachievable.
-4. R2-4 — feasibility (blocking): `profiles/framely.yaml` declares `policy_dir: policy`, `standard_json: policy/data/standard.json`, `baseline: policy/baseline.json`, and `dependable_statuses_source: policy/data/standard.json`, and the profile-resolution rule makes those paths relative to the target repository root. The framely target has no `policy/` bundle (`/Users/alang/Workspace/framely/policy/data/standard.json` does not exist); the policy being edited is `MDStandardsKit/policy/`, and neither the release asset (`doc-writer-skill.tar.gz` contains only the skill) nor the copy instructions include it. As written, `doccheck -profile`, `block_check -baseline`, and dependable-status reading fail at policy load with exit 2 before any document is checked.
+4. R2-4 — feasibility (blocking): `profiles/target-repo.yaml` declares `policy_dir: policy`, `standard_json: policy/data/standard.json`, `baseline: policy/baseline.json`, and `dependable_statuses_source: policy/data/standard.json`, and the profile-resolution rule makes those paths relative to the target repository root. The target-repo target has no `policy/` bundle (`<workspace>/target-repo/policy/data/standard.json` does not exist); the policy being edited is `MDStandardsKit/policy/`, and neither the release asset (`doc-writer-skill.tar.gz` contains only the skill) nor the copy instructions include it. As written, `doccheck -profile`, `block_check -baseline`, and dependable-status reading fail at policy load with exit 2 before any document is checked.
 5. R2-5 — completeness (blocking): `routes.json` gives the milestone route `references/_gates.md`, and `_gates.md` applies the blocking minimal set to both document types ('最小集任一未答完，不写方案章节'), but the blocked-gate output contract only names `spec.md`, `docs/specs/.drafts/<slug>-gate.md`, and the optional `## 附录 A` in `spec.md`. For a milestone it does not say whether `milestone.md` is created or modified, where the Gate Report is written (docs/specs is the Spec root), or where deferred questions are recorded, leaving half of v1's gate behavior undefined.
 6. R2-6 — completeness (blocking): The release asset is defined as `doc-writer-skill.tar.gz` containing only `.claude/skills/doc-writer/`, but the skill's routes and success criteria depend on `tools/doccheck` and on the policy/baseline bundle for `block_check`. The copy instructions add `tools/doccheck/` but not the policy. A user installing from the release asset gets a skill whose checks and external gate cannot run, although the Distribution Plan presents release installation as supported.
 7. R2-7 — consistency (blocking): The exit-1 rule permits findings to be suppressed when `(rule, document, target)` exactly matches `policy/baseline.json`, but the design never says who may create or edit the baseline, what evidence an entry needs, whether entries are reviewed, or that the skill must not add entries to unblock itself. The baseline is a gate-bypass surface: an agent that can edit it can silence any finding, which defeats the gate's purpose. The file's initial contents and any validation that entries correspond to real findings are also missing.
@@ -580,14 +580,14 @@ D2 answer: **Defer — Spec-only v1**. Accepted scope: Spec route only; existing
 | # | Severity | Confidence | Finding | Evidence |
 |---|---|---|---|---|
 | S1 | CRITICAL | 9/10 | Narrowing `governed_globs` to `docs/specs/SPEC-*/spec.md` breaks the tool's own tests and CI self-check. | `policy/data/standard.json:3`; `main_test.go:67` writes `docs/specs/001.md`; `TestExampleRepoPasses` uses `testdata/example-repo/docs/specs/example-spec.md`; `.github/workflows/ci.yml` self-check runs `./mdstandards -root . -policy ./policy -phase 1`. |
-| S2 | CRITICAL | 9/10 | The acceptance path cannot bootstrap in framely: no `docs/architecture` and no `SPEC-*` document exist, so the first spec has no dependable target and phase 1 exits 2. | `find /Users/alang/Workspace/framely/docs -maxdepth 2`; design line 309 requires a real `depends_on`; line 343 expects a clean phase 1. |
+| S2 | CRITICAL | 9/10 | The acceptance path cannot bootstrap in target-repo: no `docs/architecture` and no `SPEC-*` document exist, so the first spec has no dependable target and phase 1 exits 2. | `find <workspace>/target-repo/docs -maxdepth 2`; design line 309 requires a real `depends_on`; line 343 expects a clean phase 1. |
 | S3 | CRITICAL | 8/10 | The content gate is prose. The deterministic checks only assert headings exist and are non-empty; `background_11` and `pain_evidence` pass on `无`. | design lines 211, 341; `_gates.md` rules are instructions, not an executor. |
-| S4 | HIGH | 8/10 | The milestone corpus is not mapped: `docs/milestones/CLAUDE.md` plus five guides (636 lines) is outside the 820-line migration scope. | `wc -l /Users/alang/Workspace/framely/docs/milestones/CLAUDE.md`; design line 32 scopes only `docs/specs`. |
+| S4 | HIGH | 8/10 | The milestone corpus is not mapped: `docs/milestones/CLAUDE.md` plus five guides (636 lines) is outside the 820-line migration scope. | `wc -l <workspace>/target-repo/docs/milestones/CLAUDE.md`; design line 32 scopes only `docs/specs`. |
 | S5 | HIGH | 8/10 | There is no deterministic router; steps 1–5 are prose. `routes.json` holds keywords only. `SKILL.md` frontmatter (`name`, `description`) is undefined. | design lines 134–140, 73–98. |
 | S6 | HIGH | 8/10 | The skill's own checks are writable: an agent can delete `pain_evidence` from `checks/spec.json` and pass. `mdstandards -policy-from-head` exists for this threat but `block_check` does not use it. | design line 304; `main.go` `-policy-from-head`; `main.go:256` D11 comment. |
 | S7 | HIGH | 8/10 | Milestone gate answers have no landing place; the milestone template has no background/pain section. | design lines 117, 225, 256. |
 | S8 | HIGH | 8/10 | The shared policy is retargeted to one repo's layout, breaking the core/profile split and changing `dependable_statuses` for every consumer without a `standard_version` bump. | design lines 316–317; `policy/data/standard.json:3-5`. |
-| S9 | HIGH | 7/10 | Nothing enforces the gate after the skill run. `block_check` is interactive only; no framely CI job or pre-commit hook. | design lines 303–309; no target-repo workflow. |
+| S9 | HIGH | 7/10 | Nothing enforces the gate after the skill run. `block_check` is interactive only; no target-repo CI job or pre-commit hook. | design lines 303–309; no target-repo workflow. |
 | S10 | MEDIUM | 7/10 | `doccheck -baseline` cannot see the findings it validates: `block_check` passes `-baseline`, and `filterBaseline` removes matching findings from the report. | `report.go` `filterBaseline`; design line 271. |
 | S11 | MEDIUM | 7/10 | The human-owned baseline is not guarded at `policy/baseline.json`; `.github/CODEOWNERS` protects `/baseline.json`. | `.github/CODEOWNERS`; design line 304. |
 | S12 | MEDIUM | 7/10 | Spec Non-Goal vocabulary contradicts the source guide: the guide says do not mark `永不做` and allows `Deferred to Phase 2`; the design mandates `本次不做` or `永远不做`. | `reference/tech_specs/gobals_and_non_goals.md`; design line 247. |
@@ -613,7 +613,7 @@ Dispositions: S1, S2, S3, S8 fixed by the D2 scope reduction (no policy change; 
 2. Information leakage: two paths to `standard.json` (S18). v1 has no profile and no second path.
 3. Split ownership: policy is human-owned; the skill reads only. v1 keeps that boundary.
 4. Writable checks (S6): v1 must not claim tamper-proof content checks; `mdstandards` remains the hard gate, and the checklist is explicitly advisory.
-5. Distribution: no release tarball or per-repo copies in v1; install once into framely.
+5. Distribution: no release tarball or per-repo copies in v1; install once into target-repo.
 
 ### 2. Code quality review
 
@@ -647,7 +647,7 @@ SPEC-ONLY PATHS
 
 Gaps: 11. The content gate is not deterministically testable; the acceptance test is a manual review of 2–3 real specs. The metadata gate is covered by existing `main_test.go` and the real spec run. Add one fixture under `testdata/example-repo` only if it does not change `governed_globs` (it already uses `docs/specs/example-spec.md`, which the current policy governs).
 
-Test Plan Artifact: `alang-main-eng-review-test-plan-20261101.md` (written separately). Critical paths: bootstrap, gate, external gate. Value cards are in the artifact.
+Test Plan Artifact: `maintainer-main-eng-review-test-plan-20261101.md` (written separately). Critical paths: bootstrap, gate, external gate. Value cards are in the artifact.
 
 ### 4. Performance review
 
@@ -666,10 +666,10 @@ Native fallback (Codex not installed). Full output was presented in chat. Key fi
 ## NOT in scope
 
 - Milestone route, `routes.json`, project profile, and five-mode `tools/doccheck`: deferred to v2, because the milestone corpus is not mapped and the router has no deterministic executor (S4, S5).
-- Release tarball and per-repo policy copies: deferred; v1 installs the skill once into framely and uses the existing `mdstandards` binary and policy (S16).
+- Release tarball and per-repo policy copies: deferred; v1 installs the skill once into target-repo and uses the existing `mdstandards` binary and policy (S16).
 - `policy/data/standard.json` changes: rejected; the existing policy and tests stay untouched (S1, S8).
 - Baseline validation and `doccheck -baseline`: deferred with `doccheck` (S10, S11).
-- Framely CI hook or pre-commit gate: deferred; the interactive run is the v1 enforcement point (S9).
+- Target-repo CI hook or pre-commit gate: deferred; the interactive run is the v1 enforcement point (S9).
 - Automated content-quality enforcement: deferred; v1 measures whether 2–3 real specs change under the gate (S3).
 
 ## What already exists
@@ -677,7 +677,7 @@ Native fallback (Codex not installed). Full output was presented in chat. Key fi
 - `mdstandards` with `-policy`, `-phase`, `-baseline`, `-format`, `-policy-from-head` (`main.go:37-40`, `main.go:190`, `main.go:205`).
 - `policy/data/standard.json` with `governed_globs` and `dependable_statuses` (`policy/data/standard.json:3-5`).
 - Existing Go tests and CI self-check (`main_test.go`, `.github/workflows/ci.yml`).
-- Eight spec-writing guides and the milestone guide in framely (`docs/specs/reference/tech_specs/`, `docs/milestones/`).
+- Eight spec-writing guides and the milestone guide in target-repo (`docs/specs/reference/tech_specs/`, `docs/milestones/`).
 
 ## Flow diagram
 
@@ -720,21 +720,21 @@ Synthesized from this review's findings. Each task derives from a specific findi
   - Surfaced by: D2 scope reduction; S3, S5, S12, S13, S14, S15.
   - Files: `.claude/skills/doc-writer/SKILL.md`, `.claude/skills/doc-writer/references/gates.md`, `.claude/skills/doc-writer/templates/spec.md.tmpl`, `.claude/skills/doc-writer/checks/spec.md`.
   - Verify: read the four files; the template produces YAML frontmatter and the guide's chapter order; the checklist requires evidence, not "无".
-- [ ] **T2 (P1, human: ~1h / CC: ~10min)** — guide migration — Move `framely/docs/specs/CLAUDE.md` and `reference/` to `docs/doc-standards/specs/` (outside `docs/specs/**/*.md`), leaving a pointer outside the governed glob.
+- [ ] **T2 (P1, human: ~1h / CC: ~10min)** — guide migration — Move `target-repo/docs/specs/CLAUDE.md` and `reference/` to `docs/doc-standards/specs/` (outside `docs/specs/**/*.md`), leaving a pointer outside the governed glob.
   - Surfaced by: S1; the existing policy must not change.
-  - Files: `framely/docs/specs/CLAUDE.md`, `framely/docs/specs/reference/`, `framely/docs/doc-standards/specs/`.
-  - Verify: `mdstandards -root /Users/alang/Workspace/framely -policy <MDStandardsKit>/policy -phase 0` reports no extract error for the moved guide.
-- [ ] **T3 (P1, human: ~1h / CC: ~10min)** — bootstrap — Create `framely/docs/architecture/architecture.md` with frontmatter (`type: architecture`, `status: Approved`, `owner: alang`, `depends_on: []`) and one real `framely/docs/specs/SPEC-001-.../spec.md` with a real `depends_on` to it.
+  - Files: `target-repo/docs/specs/CLAUDE.md`, `target-repo/docs/specs/reference/`, `target-repo/docs/doc-standards/specs/`.
+  - Verify: `mdstandards -root <workspace>/target-repo -policy <MDStandardsKit>/policy -phase 0` reports no extract error for the moved guide.
+- [ ] **T3 (P1, human: ~1h / CC: ~10min)** — bootstrap — Create `target-repo/docs/architecture/architecture.md` with frontmatter (`type: architecture`, `status: Approved`, `owner: example`, `depends_on: []`) and one real `target-repo/docs/specs/SPEC-001-.../spec.md` with a real `depends_on` to it.
   - Surfaced by: S2.
-  - Files: `framely/docs/architecture/architecture.md`, `framely/docs/specs/SPEC-001-.../spec.md`.
-  - Verify: `mdstandards -root /Users/alang/Workspace/framely -policy <MDStandardsKit>/policy -phase 1` exits 0.
+  - Files: `target-repo/docs/architecture/architecture.md`, `target-repo/docs/specs/SPEC-001-.../spec.md`.
+  - Verify: `mdstandards -root <workspace>/target-repo -policy <MDStandardsKit>/policy -phase 1` exits 0.
 - [ ] **T4 (P1, human: ~2h / CC: ~20min)** — validate the gate — Generate 2–3 real Specs from real briefs with the skill; record which background/pain answers were missing and what changed.
   - Surfaced by: S3.
-  - Files: `framely/docs/specs/SPEC-00*/spec.md` (real, not fixtures).
+  - Files: `target-repo/docs/specs/SPEC-00*/spec.md` (real, not fixtures).
   - Verify: the user can point to at least one spec whose background/pain section changed because the gate asked; `mdstandards -phase 1` exits 0.
 - [ ] **T5 (P2, human: ~30min / CC: ~5min)** — record the deferral — Add the v2 items (milestone route, registry, profile, doccheck, release, baseline, CI hook) to the project's TODO or the design doc's Open Questions.
   - Surfaced by: S4, S5, S6, S7, S9, S10, S11, S16, S17.
-  - Files: `framely/docs/specs/...` or `docs/designs/doc-writing-skill.md`.
+  - Files: `target-repo/docs/specs/...` or `docs/designs/doc-writing-skill.md`.
   - Verify: every deferred item has an owner and a trigger.
 
 _No new tasks from Code Quality._
@@ -777,11 +777,11 @@ _No new tasks from Performance._
 | P4 | zero governed files / zero edges exit 2 | `main.go:113-114`, `main.go:121-122` | verified |
 | P5 | policy dependable statuses | `policy/data/standard.json:5` | verified |
 | P6 | governed globs | `policy/data/standard.json:3` | verified |
-| P7 | framely has no policy bundle | `ls /Users/alang/Workspace/framely/policy` (absent) | verified |
+| P7 | target-repo has no policy bundle | `ls <workspace>/target-repo/policy` (absent) | verified |
 | P8 | `go test ./...` ignores dot-directories | Go behavior; no probe | unverified |
 | P9 | release workflow uploads only binaries | `.github/workflows/release.yml:31-36` | verified |
 | P10 | tests use `docs/specs/001.md` | `main_test.go:67` | verified |
-| P11 | framely has no `docs/architecture` or `SPEC-*` | `find /Users/alang/Workspace/framely/docs -maxdepth 2` | verified |
+| P11 | target-repo has no `docs/architecture` or `SPEC-*` | `find <workspace>/target-repo/docs -maxdepth 2` | verified |
 
 unverified=1
 
@@ -805,7 +805,7 @@ REALITY: pr-count pass no `.gstack/ship-policy.json`; default one PR per wave; f
 
 **OUTSIDE COVERAGE:** Claude native fallback; plan review; completed; 3 Critical, 5 High, 7 Medium, 5 Low. Codex was not installed, so this is not external-provider coverage.
 
-**CROSS-MODEL:** Native and fallback reviews agree on the two Critical breaks (governed_globs/test suite; framely bootstrap) and on the prose-only content gate. No external provider completed.
+**CROSS-MODEL:** Native and fallback reviews agree on the two Critical breaks (governed_globs/test suite; target-repo bootstrap) and on the prose-only content gate. No external provider completed.
 
 **VERDICT:** ENG REVIEW REQUIRED — scope reduced to Spec-only v1; the two-type registry, milestone route, doccheck, profile, and release tarball are deferred.
 

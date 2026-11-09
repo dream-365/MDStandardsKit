@@ -1,7 +1,7 @@
 ---
 type: changelog
 status: Implemented
-owner: alang
+owner: example
 depends_on: []
 updated_at: 2026-11-03
 ---
@@ -73,14 +73,14 @@ updated_at: 2026-11-03
 
 - **修改类型**: Changed（评审通过）
 - **影响范围**: REQ-051、验收表 REQ-051、7.2 已知限制；复核架构文档 §5/§6 与 CODEOWNERS 表述（文档未改）
-- **复核原因**: `-policy-from-head` 原先只检查策略目录的未提交改动，不检查 `-baseline` 指向的文件，Agent 可通过改基线改变判定而不触发降级。修复后 Spec 回退为 `In Review`，由用户 alang 委托独立 agent 代审。
+- **复核原因**: `-policy-from-head` 原先只检查策略目录的未提交改动，不检查 `-baseline` 指向的文件，Agent 可通过改基线改变判定而不触发降级。修复后 Spec 回退为 `In Review`，由维护者委托独立 agent 代审。
 - **复核结论**: 通过，无阻断项。
   - REQ-051 与 `main.go` 一致：`gitPathDirty` 同时检查策略目录与 `-baseline` 文件（含未跟踪改动）；`-baseline` 在 `-root` 之外或 git 检查失败时按不可验证处理。`dirtyPolicy` 为真时 `blocking` 为假，跳过 baseline 过滤但保留 findings，打印 report-only 警告并退出 0。
   - 回归测试覆盖脏 baseline（工作区改为 `[]` 后退出 0 且带 report-only 警告）与干净 baseline（`git checkout -- baseline.json` 后提交的条目仍抑制 finding，退出 0 且无警告）。测试依赖真实 git，`ubuntu-latest` 的 CI 环境具备 git 与 `cp`。
   - changelog 修复条目已写明修改类型、影响范围、变更原因与具体内容；架构文档 §5/§6 与代码一致；CODEOWNERS 过期表述已修正为已由 `.github/CODEOWNERS` 保护，实际覆盖 `/policy/` 与 `/baseline.json`。
 - **测试结果**: `go test -run TestPolicyFromHeadDowngradesOnDirtyBaseline -v` PASS；`go test -count=1 ./...` 通过；`make check` 退出 0（`OK: scanned 3 documents, evaluated 1 edges`）；`-phase 0` 与 `-phase 1` JSON 均退出 0、无 findings。手工验证：脏 baseline 降级时 findings 仍输出；`-baseline` 在 `-root` 外同样降级。
 - **非阻断观察**: §3.4 的摘要句仍只提"工作区策略"，REQ-051 已完整覆盖 baseline；降级警告文本对"确实脏"与"在 root 外不可验证"不作区分。均不影响语义。
-- **评审人**: 独立 agent（用户 alang 委托代审）
+- **评审人**: 独立 agent（维护者委托代审）
 - **状态变更**: `spec.md` 与 `changelog.md` 的 `status` 由 `In Review` 改为 `Approved`。
 
 ## [2026-11-01] - 修复 -policy-from-head 的 baseline 脏检查
@@ -94,7 +94,7 @@ updated_at: 2026-11-03
 
 - **修改类型**: Changed（评审修订）
 - **影响范围**: 全文；REQ-001..052、PREC-001..003、NFR-001..004 的编号与验收语义保留
-- **变更原因**: 独立 agent 按用户 alang 的委托代审，逐条核对实现、测试、架构文档与写作规范后修正不一致项，并推进状态
+- **变更原因**: 独立 agent 按维护者的委托代审，逐条核对实现、测试、架构文档与写作规范后修正不一致项，并推进状态
 - **具体内容**:
   - §1.2 的证据度量更新为 2026-11-01 可复核的快照：排除本仓库与 `.claude` 技能目录后，411 篇 Markdown 中只有 1 篇声明了空的 `depends_on`；§1.3 补充触发点（office-hours 设计批准后进入 v1 实现与接入阶段）。
   - 澄清 REQ-005 的归一化行为（去掉 `.` 段；URL 以 `://` 判定），与 `normalize.go` 和 `TestNormalizeRepoPath` 一致。
@@ -103,8 +103,8 @@ updated_at: 2026-11-03
   - 修正验收表：`refs.rego` 守卫改为 `status.rego`；`烟测` 改为 `无`；为部分覆盖的 REQ-003/004/011/013/020 注明测试边界；REQ-042 标注无自动化测试。
   - 同步修正 §3.4、§4.4、§6.1、§6.2、§6.4 与附录 A 中与 phase 0、零依赖边、证据度量相关的表述，避免与 REQ-030/REQ-051 和 `main.go` 的退出码冲突。
   - 非目标统一使用 `本次不做` / `Deferred to Phase 2` 词汇；7.2 补充 PDS 状态词汇与 `doc_id` 偏离的已知限制。
-  - 评审人字段改为独立 agent（用户 alang 委托代审）。
-- **评审结论**: Agent 代审通过，评审人：独立 agent（用户 alang 明确委托）；v1 不校验审批来源。
+  - 评审人字段改为独立 agent（维护者委托代审）。
+- **评审结论**: Agent 代审通过，评审人：独立 agent（维护者明确委托）；v1 不校验审批来源。
 - **状态变更**: `spec.md` 与 `changelog.md` 的 `status` 由 `In Review` 改为 `Approved`。
 
 ## [2026-11-01] - 迁移到 SPEC-001 目录并按新模板重写

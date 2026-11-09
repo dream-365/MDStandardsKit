@@ -96,7 +96,7 @@ make build
 ---
 type: tasks
 status: In Progress
-owner: alang
+owner: example
 depends_on: []
 spec: ./spec.md
 spec_sha256: "<spec.md 的 sha256>"
@@ -119,7 +119,7 @@ updated_at: 2026-11-02
 ---
 type: spec
 status: Approved
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/system.md
 ---
@@ -198,3 +198,7 @@ make vet         # go vet ./...
 make check       # vet + test + mdstandards 与 taskscheck 自检
 make clean       # 删除二进制
 ```
+
+## 许可证
+
+[MIT](LICENSE)

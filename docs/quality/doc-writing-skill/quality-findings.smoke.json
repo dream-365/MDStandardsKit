@@ -3,7 +3,7 @@
   "rubric_version": "1.1.0",
   "rubric_sha256": "1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e",
   "target": "docs/designs/doc-writing-skill.md",
-  "target_sha256": "6775bbe0d928f1f4f9e38c3345dd258daff5e511f8ce6005bbb83e34525547c4",
+  "target_sha256": "c620dde99b5daac705416376835e71d3df829f01f19ee15dc88ff52397b97c19",
   "reviewer": {
     "role": "independent",
     "model": "smoke",

@@ -3,7 +3,7 @@
   "rubric_version": "1.1.0",
   "rubric_sha256": "1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e",
   "target": "docs/specs/SPEC-002-idea-type/spec.md",
-  "target_sha256": "b22b25a5f6f2784fe3fb95cd115d216b462b4451192d919c5613b910606b6ea4",
+  "target_sha256": "ec443878d11010456488a9069b0703c091806a8ac8571722bd4bf2e0f8c59364",
   "reviewer": {
     "role": "independent",
     "model": "claude",

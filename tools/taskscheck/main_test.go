@@ -17,7 +17,7 @@ const validTable = `| ID | 任务 | 覆盖 | 依赖 | 写入 | 完成标准 | �
 
 func writeSpec(t *testing.T, path, status string, withGoals bool) {
 	t.Helper()
-	body := "---\ntype: spec\nstatus: " + status + "\nowner: alang\ndepends_on: []\nupdated_at: 2026-11-02\n---\n\n# Test\n\n## 2. 目标与非目标\n\n### 2.1 目标\n\n"
+	body := "---\ntype: spec\nstatus: " + status + "\nowner: example\ndepends_on: []\nupdated_at: 2026-11-02\n---\n\n# Test\n\n## 2. 目标与非目标\n\n### 2.1 目标\n\n"
 	if withGoals {
 		body += "- **G1 目标一**：验收一。\n- **G2 目标二**：验收二。\n"
 	}
@@ -37,7 +37,7 @@ func writeTasksWith(t *testing.T, tasksPath, specPath, frontmatter, body string)
 		t.Fatal(err)
 	}
 	if frontmatter == "" {
-		frontmatter = "type: tasks\nstatus: In Progress\nowner: alang\ndepends_on: []\nspec: ./spec.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
+		frontmatter = "type: tasks\nstatus: In Progress\nowner: example\ndepends_on: []\nspec: ./spec.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
 	}
 	frontmatter = strings.ReplaceAll(frontmatter, "{{HASH}}", sum)
 	content := "---\n" + frontmatter + "\n---\n\n" + body
@@ -250,7 +250,7 @@ func TestCaseCollisionIsWarning(t *testing.T) {
 
 func TestStaleHash(t *testing.T) {
 	root, spec, tasks := setup(t)
-	fm := "type: tasks\nstatus: In Progress\nowner: alang\ndepends_on: []\nspec: ./spec.md\nspec_sha256: " + strings.Repeat("a", 64) + "\nupdated_at: 2026-11-02"
+	fm := "type: tasks\nstatus: In Progress\nowner: example\ndepends_on: []\nspec: ./spec.md\nspec_sha256: " + strings.Repeat("a", 64) + "\nupdated_at: 2026-11-02"
 	writeTasksWith(t, tasks, spec, fm, validTable)
 	code, out, _ := runCLI(t, "-root", root, "-phase", "1")
 	if code != 1 {
@@ -265,7 +265,7 @@ func TestWrongSpecPath(t *testing.T) {
 	if err := os.WriteFile(other, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	fm := "type: tasks\nstatus: In Progress\nowner: alang\ndepends_on: []\nspec: ./other.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
+	fm := "type: tasks\nstatus: In Progress\nowner: example\ndepends_on: []\nspec: ./other.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
 	writeTasksWith(t, tasks, spec, fm, validTable)
 	code, out, _ := runCLI(t, "-root", root, "-phase", "1")
 	if code != 1 {
@@ -276,7 +276,7 @@ func TestWrongSpecPath(t *testing.T) {
 
 func TestMissingSpec(t *testing.T) {
 	root, spec, tasks := setup(t)
-	fm := "type: tasks\nstatus: In Progress\nowner: alang\ndepends_on: []\nspec: ./nope.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
+	fm := "type: tasks\nstatus: In Progress\nowner: example\ndepends_on: []\nspec: ./nope.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02"
 	writeTasksWith(t, tasks, spec, fm, validTable)
 	code, out, _ := runCLI(t, "-root", root, "-phase", "1")
 	if code != 1 {
@@ -290,7 +290,7 @@ func TestMissingSpec(t *testing.T) {
 
 func TestNotApplicableSkipsHash(t *testing.T) {
 	root, spec, tasks := setup(t)
-	fm := "type: tasks\nstatus: Draft\nowner: alang\ndepends_on: []\nspec: ./spec.md\nspec_sha256: " + strings.Repeat("a", 64) + "\nupdated_at: 2026-11-02\nnot_applicable: 单批可完成"
+	fm := "type: tasks\nstatus: Draft\nowner: example\ndepends_on: []\nspec: ./spec.md\nspec_sha256: " + strings.Repeat("a", 64) + "\nupdated_at: 2026-11-02\nnot_applicable: 单批可完成"
 	writeTasksWith(t, tasks, spec, fm, "")
 	code, out, _ := runCLI(t, "-root", root, "-phase", "1")
 	if code != 0 {
@@ -300,7 +300,7 @@ func TestNotApplicableSkipsHash(t *testing.T) {
 
 func TestNotApplicableWithTable(t *testing.T) {
 	root, spec, tasks := setup(t)
-	fm := "type: tasks\nstatus: Draft\nowner: alang\ndepends_on: []\nspec: ./spec.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02\nnot_applicable: 单批可完成"
+	fm := "type: tasks\nstatus: Draft\nowner: example\ndepends_on: []\nspec: ./spec.md\nspec_sha256: {{HASH}}\nupdated_at: 2026-11-02\nnot_applicable: 单批可完成"
 	writeTasksWith(t, tasks, spec, fm, validTable)
 	code, out, _ := runCLI(t, "-root", root, "-phase", "1")
 	if code != 1 {

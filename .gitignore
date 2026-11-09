@@ -5,3 +5,15 @@
 *.test
 findings.json
 docs/designs/*.review.*/
+
+# OS / editor
+.DS_Store
+
+# Local config and secrets
+.env
+.env.*
+*.local
+
+# Test output
+coverage.out
+*.out

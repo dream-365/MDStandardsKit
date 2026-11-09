@@ -2,7 +2,7 @@
 
 - Spec: `docs/specs/SPEC-002-idea-type/spec.md`
 - Rubric: 1.1.0 (`1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e`)
-- Target SHA-256: `b22b25a5f6f2784fe3fb95cd115d216b462b4451192d919c5613b910606b6ea4`
+- Target SHA-256: `ec443878d11010456488a9069b0703c091806a8ac8571722bd4bf2e0f8c59364`
 - Reviewer session: `reviewer-spec-002-20261106`
 
 **Headline score (core): 96.7**  |  Diagnostic score (all): 91.8

@@ -1,7 +1,7 @@
 ---
 type: spec
 status: Implemented
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/mdstandards-architecture.md
 updated_at: 2026-11-06
@@ -12,7 +12,7 @@ updated_at: 2026-11-06
 | 字段 | 内容 |
 | --- | --- |
 | 标题 | MDStandardsKit idea 类型 技术方案 |
-| 主笔 | alang |
+| 主笔 | 维护者 |
 | 评审人 | 独立 agent 冷读 + `/plan-eng-review`；2026-11-03 实现收口后独立质量复审 |
 | 创建日期 | 2026-11-02 |
 | 目标版本 | v0.2.0 |

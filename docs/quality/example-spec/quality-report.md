@@ -2,7 +2,7 @@
 
 - Target: `testdata/example-repo/docs/specs/example-spec.md`
 - Rubric: 1.0.0 (`acb806c85c7a357f1cdfeaea80a8dc951333aefe5b630fe8576e0e0ce7f25947`)
-- Target SHA-256: `8eff17bacf3a9656376dbc78c58bf17d9d748da213bcbda650d55fc20199bc53`
+- Target SHA-256: `eb17265c5d53537c5cb7b062a2914939238c85072ef80940f1db456731389db8`
 - Reviewer session: `reviewer-legacy-20261102`
 
 **Headline score (core): 12.0**  |  Diagnostic score (all): 12.0

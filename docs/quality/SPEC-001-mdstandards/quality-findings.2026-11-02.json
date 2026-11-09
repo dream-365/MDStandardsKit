@@ -82,7 +82,7 @@
       "evidence": [
         {
           "section": "1.2 核心技术痛点",
-          "quote": "证据：截至 2026-11-01，在 `/Users/alang/Workspace`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
+          "quote": "证据：截至 2026-11-01，在 `<workspace>`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
         }
       ],
       "rationale": "有带日期、路径范围与数量的 411 篇/1 篇度量，可核实；但它证明的是 depends_on 几乎为零，而非缺失或未批准目标造成的事故，文档也自认没有事故证据。",
@@ -602,7 +602,7 @@
       "evidence": [
         {
           "section": "1.2 核心技术痛点",
-          "quote": "证据：截至 2026-11-01，在 `/Users/alang/Workspace`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
+          "quote": "证据：截至 2026-11-01，在 `<workspace>`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。"
         },
         {
           "section": "5. 非功能性需求",

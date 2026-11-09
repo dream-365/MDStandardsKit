@@ -19,7 +19,7 @@ YAML frontmatter（闸门读取）：
 ```yaml
 type: spec
 status: Draft
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/system.md
 updated_at: 2026-11-01
