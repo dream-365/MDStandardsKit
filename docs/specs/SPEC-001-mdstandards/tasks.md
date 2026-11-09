@@ -1,10 +1,10 @@
 ---
 type: tasks
 status: Done
-owner: alang
+owner: example
 depends_on: []
 spec: ./spec.md
-spec_sha256: "bb8d4081ca8b4738feeeea3a8c22353dabf47fdeb466803ef4593b8b4d0f1d56"
+spec_sha256: "fe670d6841bedd086fc3c7e7e9523218fd2e64359b1d555415349d24f124a3dc"
 updated_at: 2026-11-03
 ---
 

@@ -355,7 +355,7 @@
       "evidence": [
         {
           "section": "Reality rows",
-          "quote": "| P7 | framely has no policy bundle | `ls /Users/alang/Workspace/framely/policy` (absent) | verified |"
+          "quote": "| P7 | target-repo has no policy bundle | `ls <workspace>/target-repo/policy` (absent) | verified |"
         },
         {
           "section": "Spec 模块（references/spec.md）",

@@ -2,7 +2,7 @@
 
 - Target: `testdata/example-repo/docs/specs/example-spec.md`
 - Rubric: 1.1.0 (`1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e`)
-- Target SHA-256: `8eff17bacf3a9656376dbc78c58bf17d9d748da213bcbda650d55fc20199bc53`
+- Target SHA-256: `eb17265c5d53537c5cb7b062a2914939238c85072ef80940f1db456731389db8`
 - Reviewer session: `reviewer-smoke`
 
 **Headline score (core): 0.0**  |  Diagnostic score (all): 0.0

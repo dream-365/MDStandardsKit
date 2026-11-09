@@ -1,14 +1,14 @@
 ---
 type: architecture
 status: Approved
-owner: alang
+owner: example
 depends_on: []
 ---
 
 # MDStandardsKit 架构
 
 > 派生自 2026-10-30 批准的 office-hours 设计文档
-> `~/.gstack/projects/MDStandardsKit/alang-unknown-design-20261030-124625.md`，
+> `<state-root>/projects/MDStandardsKit/maintainer-unknown-design-20261030-124625.md`，
 > 并经过 `/plan-eng-review` 的三轮规格评审与一轮外部独立评审。
 > 本文只记录已批准的决策，不重复评审过程。
 
@@ -125,7 +125,7 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 ```json
 {
   "documents": [
-    {"path": "specs/001.md", "type": "spec", "status": "Approved", "owner": "alang",
+    {"path": "specs/001.md", "type": "spec", "status": "Approved", "owner": "example",
      "depends_on": ["docs/architecture/sys.md"]}
   ],
   "extract_errors": [

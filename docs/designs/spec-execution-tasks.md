@@ -5,7 +5,7 @@ Branch: main
 Repo: dream-365/MDStandardsKit
 Status: APPROVED (implemented for v0.2.0)
 Mode: Builder
-Supersedes: 不取代；延续 alang-main-design-20261102-094931.md 的结构闸门 + 内容评分双层思路，新增执行拆解产物。
+Supersedes: 不取代；延续 maintainer-main-design-20261102-094931.md 的结构闸门 + 内容评分双层思路，新增执行拆解产物。
 
 ## Problem Statement
 
@@ -635,7 +635,7 @@ Value cards:
 
 Tests to retire: none.
 
-Test Plan Artifact: written to `$GSTACK_STATE_ROOT/projects/MDStandardsKit/alang-main-eng-review-test-plan-<datetime>.md` (see artifact).
+Test Plan Artifact: written to `$GSTACK_STATE_ROOT/projects/MDStandardsKit/maintainer-main-eng-review-test-plan-<datetime>.md` (see artifact).
 
 ### 4. Performance review
 

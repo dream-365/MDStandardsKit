@@ -5,7 +5,7 @@ Branch: main
 Repo: dream-365/MDStandardsKit
 Status: APPROVED
 Mode: Builder
-Supersedes: 仅取代 `docs/designs/doc-writing-skill.md` 中「分发与迁移」一节；`alang-main-design-20261101-200200.md` 为同分支上一份设计，不整体取代。
+Supersedes: 仅取代 `docs/designs/doc-writing-skill.md` 中「分发与迁移」一节；`maintainer-main-design-20261101-200200.md` 为同分支上一份设计，不整体取代。
 
 ## Problem Statement
 
@@ -25,7 +25,7 @@ doc-writer 现在只存在于本仓库的 `.claude/skills/doc-writer/`，其他�
 
 把"一个我复制的技能"变成"一条有版本、可回滚、跨项目复用的闸门运行时"。
 
-装好之后，framely 里写 Spec 用的规范、`mdstandards` 元数据闸门、`qualitycheck` 证据审计来自同一个发布版本；换一台机器、换一个项目，`claude plugin marketplace add ...#v0.1.0` 就能回到完全相同的组合。版本号不再是仓库里一个装饰字段，而是安装路径、缓存路径和 CI 验收共同引用的事实。
+装好之后，target-repo 里写 Spec 用的规范、`mdstandards` 元数据闸门、`qualitycheck` 证据审计来自同一个发布版本；换一台机器、换一个项目，`claude plugin marketplace add ...#v0.1.0` 就能回到完全相同的组合。版本号不再是仓库里一个装饰字段，而是安装路径、缓存路径和 CI 验收共同引用的事实。
 
 ## Constraints
 
@@ -33,7 +33,7 @@ doc-writer 现在只存在于本仓库的 `.claude/skills/doc-writer/`，其他�
 - 全局安装走 Claude Code 插件 + marketplace（user scope），不再往 `~/.claude/skills/` 复制目录。
 - 插件不打包 30MB 二进制；CI 产出 per-platform 资产，shim **下载优先、校验 sha256、Go build 兜底**。
 - 固定版本 = marketplace 指向某个 tag；没有安装时按单插件版本固定的语法。
-- 验收项目是 framely：先移除项目级技能副本，再跑通 `mdstandards -phase 1`。
+- 验收项目是 target-repo：先移除项目级技能副本，再跑通 `mdstandards -phase 1`。
 - 现有 `doc-writer-skill.tar.gz` 在 v0.1 删除；README、release workflow 与旧设计文档中的分发承诺同步移除，不保留第二条安装路径。
 - `${CLAUDE_PLUGIN_ROOT}` 只在技能正文里内联替换，不会进入 Bash 进程环境；shim 必须从 `$0` 推导根目录。
 
@@ -43,15 +43,15 @@ doc-writer 现在只存在于本仓库的 `.claude/skills/doc-writer/`，其他�
 2. 全局安装走插件 + marketplace，user scope。
 3. 二进制策略：下载优先、sha256 校验、Go build 兜底（会话中由"Go 构建优先"修订而来）。
 4. 固定版本发生在 marketplace 的 ref/tag 层。
-5. framely 先删项目级副本，再验收。
+5. target-repo 先删项目级副本，再验收。
 6. 旧 `doc-writer-skill.tar.gz` 在 v0.1 删除，不保留离线人工下载路径。
 
 ## Cross-Model Perspective
 
 独立 Claude 子代理冷读的要点：
 
-- 更酷的版本不是"版本化技能目录"，而是"版本化闸门运行时"：全局插件负责运行，项目用 `.mdstandards.lock` 固定 tool 版本与 policy sha256，这样 framely 可以停在 v0.1，另一个项目用 v0.3。这是本次不做的 v0.2 方向。
-- 最兴奋的点是"供所有的项目使用"；发布和版本是手段，周末应优先一键安装、可见升级、framely 验收。
+- 更酷的版本不是"版本化技能目录"，而是"版本化闸门运行时"：全局插件负责运行，项目用 `.mdstandards.lock` 固定 tool 版本与 policy sha256，这样 target-repo 可以停在 v0.1，另一个项目用 v0.3。这是本次不做的 v0.2 方向。
+- 最兴奋的点是"供所有的项目使用"；发布和版本是手段，周末应优先一键安装、可见升级、target-repo 验收。
 - 现成工具覆盖一半：GoReleaser 覆盖跨平台构建/校验和/Release，Anthropic 插件示例覆盖 manifest/catalog/安装 UX。剩余一半是 glue，不值得再引入 GoReleaser。
 - 周末应先做：根级 `.claude-plugin/{plugin.json,marketplace.json}`、两个 shim、单一版本源、tag 一致性校验、tag 安装 smoke。
 - 两个 Critical：旧的 tarball 不是可安装物；`SKILL.md` 的写死路径会让第一次工具调用失败。
@@ -221,7 +221,7 @@ claude plugin install doc-writer@mdstandards --scope user
 - 干净 HOME 下 `claude plugin marketplace add dream-365/MDStandardsKit#v0.1.0 --scope user` 与 `claude plugin install doc-writer@mdstandards --scope user` 成功。
 - 在任意非本仓库目录能加载技能；`/doc-writer:doc-writer` 可用。
 - 支持平台（darwin/arm64、darwin/amd64、linux/amd64、linux/arm64）上，无 Go 的机器首次调用 shim 能下载并通过 sha256 校验；`with-go` 腿通过 `MDSTANDARDS_SKIP_DOWNLOAD=1` 强制验证 build fallback；不支持平台给出受支持平台列表与手工构建指引并 exit 2。
-- framely：删除 `.claude/skills/doc-writer` 后，技能仍可用；架构文档转 `Approved`，第一份带真实 `depends_on` 的 Spec 跑 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0。`<plugin-root>` 由技能在执行时用 `${CLAUDE_PLUGIN_ROOT}` 内联替换。
+- target-repo：删除 `.claude/skills/doc-writer` 后，技能仍可用；架构文档转 `Approved`，第一份带真实 `depends_on` 的 Spec 跑 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0。`<plugin-root>` 由技能在执行时用 `${CLAUDE_PLUGIN_ROOT}` 内联替换。
 - CI 在 tag 与 `plugin.json.version` 不一致时失败；两个工具的四平台资产与 `checksums.txt` 都存在；`claude plugin validate .` 通过；smoke 在发布前通过；`doc-writer-tool mdstandards --version` 与 tag 一致并输出 policy sha256。
 - v0.1.0 验证同版本安装；从 v0.2.0 起，升级到新版本的"remove → add → install"序列和回滚序列都在 smoke 中实际跑过。
 
@@ -242,18 +242,18 @@ claude plugin install doc-writer@mdstandards --scope user
 4. 重写 `.github/workflows/release.yml`：`needs` 依赖图、版本一致性 + `make check`、四平台双工具构建、artifact-first smoke、通过后才 publish。
 5. 本地用 `claude --plugin-dir .` 跑通一次 Spec 流程；`claude plugin validate .` 通过。
 6. 打 `v0.1.0`，按安装命令在干净环境验证；tag 与 Release 资产发布后不改。
-7. 在 framely 完成验收：删副本、架构转 Approved、写第一份 Spec，用 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0。
+7. 在 target-repo 完成验收：删副本、架构转 Approved、写第一份 Spec，用 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0。
 8. 全仓清扫 `.claude/skills/doc-writer`、`doc-writer-skill.tar.gz`、`VERSION` 的旧引用；写清贡献者入口（`claude --plugin-dir .` 或 user-scope 安装）；更新 README、TODOS、旧设计文档。
 
 ## The Assignment
 
-在 framely 上从 `v0.1.0` tag 完整安装一次 doc-writer 插件：先删除 `.claude/skills/doc-writer/` 项目副本，把 `docs/architecture/architecture.md` 的 `status` 从 `Draft` 改为 `Approved`，然后写第一份带真实 `depends_on` 的 Spec，并让 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0（`<plugin-root>` 由技能内联替换）。先不要写 `.mdstandards.lock`。
+在 target-repo 上从 `v0.1.0` tag 完整安装一次 doc-writer 插件：先删除 `.claude/skills/doc-writer/` 项目副本，把 `docs/architecture/architecture.md` 的 `status` 从 `Draft` 改为 `Approved`，然后写第一份带真实 `depends_on` 的 Spec，并让 `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` 退出 0（`<plugin-root>` 由技能内联替换）。先不要写 `.mdstandards.lock`。
 
 ## What I noticed about how you think
 
 - 你说的是"供所有的项目使用"，不是"以后少复制几次"。你要的是杠杆，不是省事。
 - 你很快接受了六条前提，但在"每台机器装 Go"这条上接受修订——你改的是证据，不是立场。
-- 你选 framely 作为第一个验收点，而不是"等做完再说"。这会让方案很难自欺。
+- 你选 target-repo 作为第一个验收点，而不是"等做完再说"。这会让方案很难自欺。
 - 你把"能够 release"当成一个属性来要求，而不是一次性动作；这决定了我们优先做 tag 契约和 smoke，而不是更多规则。
 
 <!-- gstack:office-hours:concerns:start -->
@@ -567,7 +567,7 @@ CODE PATHS
   └── [GAP] install/upgrade smoke
 
 USER FLOWS
-[+] framely acceptance
+[+] target-repo acceptance
   ├── [GAP] remove project skill copy
   ├── [GAP] approve architecture
   └── [GAP] first spec passes phase 1
@@ -576,7 +576,7 @@ COVERAGE: 0/13 automated (0%) | manual: 3 flows
 GAPS: 13 (shim 9, manifest 2, release 2)
 ```
 
-D4 adds a PR job and `scripts/shim-test.sh`; the Test Plan Artifact is at `~/.gstack/projects/MDStandardsKit/alang-main-eng-review-test-plan-20261102-081620.md`.
+D4 adds a PR job and `scripts/shim-test.sh`; the Test Plan Artifact is at `<state-root>/projects/MDStandardsKit/maintainer-main-eng-review-test-plan-20261102-081620.md`.
 
 ### 4. Performance Review
 
@@ -592,7 +592,7 @@ Native Plan subagent (Codex not installed; `outside_status: unavailable`). 12 fi
 - F6 — missing `needs:` and no `make check` in verify; fixed.
 - F7 — smoke legs could not distinguish download from build; fixed with a Go-less container, tag checkout, and provenance assertions.
 - F8 — external assumptions validated last; added an install spike as Step 1.
-- F9 — cut download-first/4-platform; rejected. Premise 3 was explicitly revised after weighing the Go tax; the goal is all projects, not only framely on this Mac.
+- F9 — cut download-first/4-platform; rejected. Premise 3 was explicitly revised after weighing the Go tax; the goal is all projects, not only target-repo on this Mac.
 - F10 — reproducibility escape hatches; resolved by D6.
 - F12 — non-atomic first-use race; fixed with a temp file inside the cache and same-directory `mv`.
 
@@ -644,9 +644,9 @@ Critical gaps: 0.
 | Move skill + rewrite | `skills/`, `.claude-plugin/` | spike |
 | Dispatcher + tests | `bin/`, `scripts/` | spike |
 | Release CI | `.github/workflows/` | move + dispatcher |
-| Framely acceptance | external repo | release |
+| Target-repo acceptance | external repo | release |
 
-Parallel lanes: spike → (move skill ∥ dispatcher) → release CI → framely. Shared module: `.claude-plugin/` and `SKILL.md` paths, so the move and dispatcher must agree before CI.
+Parallel lanes: spike → (move skill ∥ dispatcher) → release CI → target-repo. Shared module: `.claude-plugin/` and `SKILL.md` paths, so the move and dispatcher must agree before CI.
 
 ## Implementation Tasks
 
@@ -670,9 +670,9 @@ Parallel lanes: spike → (move skill ∥ dispatcher) → release CI → framely
   - Surfaced by: D5, Outside Voice F5/F6/F7.
   - Files: `.github/workflows/release.yml`.
   - Verify: a failed smoke leaves no published Release; `mdstandards --version` matches the tag.
-- [ ] **T6 (P1, human: ~1h / CC: ~10min)** — acceptance — Run the framely acceptance.
+- [ ] **T6 (P1, human: ~1h / CC: ~10min)** — acceptance — Run the target-repo acceptance.
   - Surfaced by: Assignment.
-  - Files: `/Users/alang/Workspace/framely/docs/architecture/architecture.md`, `docs/specs/SPEC-001-*/spec.md`.
+  - Files: `<workspace>/target-repo/docs/architecture/architecture.md`, `docs/specs/SPEC-001-*/spec.md`.
   - Verify: `<plugin-root>/bin/doc-writer-tool mdstandards -root . -policy <plugin-root>/policy -phase 1` exits 0.
 - [ ] **T7 (P2, human: ~30min / CC: ~5min)** — docs — Sweep old paths and document the contributor entry.
   - Surfaced by: Outside Voice F1/F2/F4, R3-9/R3-11.

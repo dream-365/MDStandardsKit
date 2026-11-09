@@ -27,7 +27,15 @@ claude plugin install doc-writer@mdstandards --scope user
 
 ## 快速开始
 
+需要 Go 1.27.1+。可以直接安装，也可以本地构建：
+
 ```bash
+# 安装到 $GOBIN
+go install github.com/dream-365/MDStandardsKit@latest
+go install github.com/dream-365/MDStandardsKit/tools/qualitycheck@latest
+go install github.com/dream-365/MDStandardsKit/tools/taskscheck@latest
+
+# 或者本地构建
 make build
 
 # 只报告，永不阻断
@@ -39,6 +47,8 @@ make build
 # 给 CI 的机器可读输出
 ./mdstandards -root . -policy ./policy -phase 1 -format json -out findings.json
 ```
+
+`v0.2.2` 及更早的 tag 仍声明旧的 module 名，`@latest` 需要等下一个 release；在此之前可以用 `@main`。
 
 试一下自带示例：
 
@@ -96,7 +106,7 @@ make build
 ---
 type: tasks
 status: In Progress
-owner: alang
+owner: example
 depends_on: []
 spec: ./spec.md
 spec_sha256: "<spec.md 的 sha256>"
@@ -119,7 +129,7 @@ updated_at: 2026-11-02
 ---
 type: spec
 status: Approved
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/system.md
 ---
@@ -198,3 +208,7 @@ make vet         # go vet ./...
 make check       # vet + test + mdstandards 与 taskscheck 自检
 make clean       # 删除二进制
 ```
+
+## 许可证
+
+[MIT](LICENSE)

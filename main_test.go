@@ -26,7 +26,7 @@ func doc(status string, deps ...string) string {
 	b.WriteString("---\n")
 	b.WriteString("type: spec\n")
 	b.WriteString("status: " + status + "\n")
-	b.WriteString("owner: alang\n")
+	b.WriteString("owner: example\n")
 	if len(deps) > 0 {
 		b.WriteString("depends_on:\n")
 		for _, d := range deps {

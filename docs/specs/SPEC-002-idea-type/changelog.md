@@ -1,7 +1,7 @@
 ---
 type: changelog
 status: Implemented
-owner: alang
+owner: example
 depends_on: []
 updated_at: 2026-11-06
 ---

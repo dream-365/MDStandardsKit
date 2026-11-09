@@ -1,7 +1,7 @@
 ---
 type: spec
 status: Implemented
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/mdstandards-architecture.md
 updated_at: 2026-11-03
@@ -12,8 +12,8 @@ updated_at: 2026-11-03
 | 字段 | 内容 |
 | --- | --- |
 | 标题 | MDStandardsKit v1 元数据闸门 技术方案 |
-| 主笔 | alang |
-| 评审人 | 独立 agent（用户 alang 委托代审）；2026-11-03 实现收口后独立质量复审；v1 无独立下游负责人 |
+| 主笔 | 维护者 |
+| 评审人 | 独立 agent（维护者委托代审）；2026-11-03 实现收口后独立质量复审；v1 无独立下游负责人 |
 | 创建日期 | 2026-10-30 |
 | 目标版本 | v1 |
 | 关联资源 | [架构](../../architecture/mdstandards-architecture.md) |
@@ -41,7 +41,7 @@ updated_at: 2026-11-03
 3. 没有任何东西验证它存在，也没有东西验证它已被批准。
 4. 构建全绿、页面都在、检索正常，代码却照着过期或未批准的架构写完了。
 
-证据：截至 2026-11-01，在 `/Users/alang/Workspace`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。因此，以 phase 1 直接对既有仓库运行 v1 会因“零依赖边”退出 2；这是 fail-closed 的设计行为，不是缺陷。
+证据：截至 2026-11-01，在 `<workspace>`（排除本仓库、`.claude` 技能目录与 `crawlers/` 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 `depends_on`，且为空数组；真实语料主要用表格维护依赖（`meta_standards`、`spec_upstream_refs`）。因此，以 phase 1 直接对既有仓库运行 v1 会因“零依赖边”退出 2；这是 fail-closed 的设计行为，不是缺陷。
 
 缺口：本次没有拿到一次具体事故的时间、涉及文件数与投入工时。这一点记入附录 A。
 

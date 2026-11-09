@@ -182,8 +182,8 @@
   - normalized: "At 1000 docs the NFR budget is <10s per scan"
   - rationale: 820 行、23 条映射等数字在 Reality rows 标了测量方式，但 1000 docs 下 <10s 的扫描预算是未实测数字，未标 [estimated]。
 - **x.no_fabricated_refs** [core, level 2] — 是否没有捏造 SPEC 引用、depends_on 目标或 M<N>？
-  - evidence `Reality rows`: "\| P7 \| framely has no policy bundle \| 'ls /Users/alang/Workspace/framely/policy' (absent) \| verified \|"
-  - normalized: "\| P7 \| framely has no policy bundle \| 'ls /Users/alang/Workspace/framely/policy' (absent) \| verified \|"
+  - evidence `Reality rows`: "\| P7 \| target-repo has no policy bundle \| 'ls <workspace>/target-repo/policy' (absent) \| verified \|"
+  - normalized: "\| P7 \| target-repo has no policy bundle \| 'ls <workspace>/target-repo/policy' (absent) \| verified \|"
   - evidence `Spec 模块（references/spec.md）`: "- 'depends_on' 只写真实存在的受管文档；写入前确认目标文件存在，并且状态可依赖。"
   - normalized: "- 'depends_on' 只写真实存在的受管文档;写入前确认目标文件存在,并且状态可依赖。"
   - rationale: 引用的 main.go、policy 路径由 Reality rows 逐条核实；depends_on 规则要求只写真实存在且可依赖的文档，全文没有具体 SPEC 编号或捏造的 M<N> 引用。

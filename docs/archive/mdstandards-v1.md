@@ -1,7 +1,7 @@
 ---
 type: spec
 status: Draft
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/mdstandards-architecture.md
 ---

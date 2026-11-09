@@ -1,7 +1,7 @@
 ---
 type: spec
 status: Approved
-owner: alang
+owner: example
 depends_on:
   - docs/architecture/example-architecture.md
 ---

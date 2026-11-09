@@ -53,8 +53,8 @@
 ## 痛点证据 (pain_evidence)
 
 - **bg.pain_evidence** [core, level 1] — 1.2 是否有至少一条可核实的证据（事故、度量或引述）？
-  - evidence `1.2 核心技术痛点`: "证据：截至 2026-11-01，在 '/Users/alang/Workspace'（排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 'depends_on'，且为空数组；真实语料主要用表格维护依赖（'meta_standards'、'spec_upstream_refs'）。"
-  - normalized: "证据:截至 2026-11-01,在 '/Users/alang/Workspace'(排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料)的 411 篇 Markdown 中,只有 1 篇声明了 'depends_on',且为空数组;真实语料主要用表格维护依赖('meta_standards'、'spec_upstream_refs')。"
+  - evidence `1.2 核心技术痛点`: "证据：截至 2026-11-01，在 '<workspace>'（排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 'depends_on'，且为空数组；真实语料主要用表格维护依赖（'meta_standards'、'spec_upstream_refs'）。"
+  - normalized: "证据:截至 2026-11-01,在 '<workspace>'(排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料)的 411 篇 Markdown 中,只有 1 篇声明了 'depends_on',且为空数组;真实语料主要用表格维护依赖('meta_standards'、'spec_upstream_refs')。"
   - rationale: 有带日期、路径范围与数量的 411 篇/1 篇度量，可核实；但它证明的是 depends_on 几乎为零，而非缺失或未批准目标造成的事故，文档也自认没有事故证据。
 
 ## 目标可验收 (goal_verifiability)
@@ -260,8 +260,8 @@
   - normalized: "- **REQ-001** 工具应遍历每个 'governed_globs' 模式,把匹配的文件解析为语料中的一条 document。"
   - rationale: 全文只有 mermaid 图、参数与字段表格、需求条目，没有实现代码、测试日志或偶发报错堆砌。
 - **x.numbers_sourced** [core, level 2] — 关键数字是否有出处，或标了 [estimated]？
-  - evidence `1.2 核心技术痛点`: "证据：截至 2026-11-01，在 '/Users/alang/Workspace'（排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 'depends_on'，且为空数组；真实语料主要用表格维护依赖（'meta_standards'、'spec_upstream_refs'）。"
-  - normalized: "证据:截至 2026-11-01,在 '/Users/alang/Workspace'(排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料)的 411 篇 Markdown 中,只有 1 篇声明了 'depends_on',且为空数组;真实语料主要用表格维护依赖('meta_standards'、'spec_upstream_refs')。"
+  - evidence `1.2 核心技术痛点`: "证据：截至 2026-11-01，在 '<workspace>'（排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料）的 411 篇 Markdown 中，只有 1 篇声明了 'depends_on'，且为空数组；真实语料主要用表格维护依赖（'meta_standards'、'spec_upstream_refs'）。"
+  - normalized: "证据:截至 2026-11-01,在 '<workspace>'(排除本仓库、'.claude' 技能目录与 'crawlers/' 抓取语料)的 411 篇 Markdown 中,只有 1 篇声明了 'depends_on',且为空数组;真实语料主要用表格维护依赖('meta_standards'、'spec_upstream_refs')。"
   - evidence `5. 非功能性需求`: "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒（'[estimated]'，待实测）。"
   - normalized: "- **NFR-001** 单次全量检查在 1000 篇受管文档上应 < 10 秒('[estimated]',待实测)。"
   - rationale: 411 篇/1 篇度量带日期与语料范围，NFR-001 的 10 秒标 '[estimated]' 并注待实测，NFR-002 标尚未实现；其余数字是设计阈值。

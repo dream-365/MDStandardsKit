@@ -10,7 +10,7 @@ import (
 func TestMissingStatusIsNotDependable(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root, "docs/specs/001.md", doc("Approved", "docs/architecture/003.md"))
-	writeFile(t, root, "docs/architecture/003.md", "---\ntype: architecture\nowner: alang\n---\n\n# Body\n")
+	writeFile(t, root, "docs/architecture/003.md", "---\ntype: architecture\nowner: example\n---\n\n# Body\n")
 
 	code, out, errs := runCLI(t, root, "--format", "json", "--phase", "1")
 	if code != 1 {
