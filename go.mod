@@ -1,4 +1,4 @@
-module mdstandards
+module github.com/dream-365/MDStandardsKit
 
 go 1.27.1
 
