@@ -6,12 +6,15 @@
 那篇文档必须存在，并且处于可被依赖的状态（`Approved` 或 `Published`）。构建全绿、
 页面都在，不代表 Agent 没有照着过期的架构写代码。
 
+一个仓库可以同时有多种文档类型：在 `.mdstandards.json` 里列出 `types`，每个文件按自己的
+frontmatter `type:` 套用不同规则。
+
 ## 作为 Claude Code 插件安装
 
 doc-writer 和 idea-writer 技能随本仓库作为插件发布。安装固定版本：
 
 ```bash
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.2 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.3.0 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
@@ -19,7 +22,7 @@ claude plugin install doc-writer@mdstandards --scope user
 
 ```bash
 claude plugin marketplace remove mdstandards
-claude plugin marketplace add dream-365/MDStandardsKit#v0.2.2 --scope user
+claude plugin marketplace add dream-365/MDStandardsKit#v0.3.0 --scope user
 claude plugin install doc-writer@mdstandards --scope user
 ```
 
@@ -48,7 +51,7 @@ make build
 ./mdstandards -root . -policy ./policy -phase 1 -format json -out findings.json
 ```
 
-`v0.2.2` 及更早的 tag 仍声明旧的 module 名，`@latest` 需要等下一个 release；在此之前可以用 `@main`。
+`v0.2.2` 及更早的 tag 仍声明旧的 module 名；`v0.3.0` 起使用仓库地址，发布后 `@latest` 可用。
 
 试一下自带示例：
 
@@ -98,6 +101,30 @@ make build
 外部的声音可以整节省略；如果保留章节，模板注释必须替换，否则命中 `idea.placeholder_remaining`。
 它当前不进入 rubric，只作为评审上下文。
 
+## 多类型仓库
+
+在仓库根放 `.mdstandards.json`，列出仓库实际出现的全部类型：
+
+```json
+{"types":["spec","architecture","changelog","tasks","index"]}
+```
+
+每个受管文件按 frontmatter `type:` 路由；类型必须在 `policy/data/standard.json` 的
+`document_types` 里有档案，并出现在 `types` 中。缺失、未知、未启用或与路径不兼容的 `type`
+都会产生 routing error：`-phase 0` 只报告，`-phase 1` 未降级时 exit 2。
+
+`rule_set` 决定套用哪组规则：
+
+| `rule_set` | 规则 | 说明 |
+|---|---|---|
+| `spec` | `refs.*` | 引用图检查；`graph: true` 时参与零边断言 |
+| `idea` | `idea.*` | 结构规则 |
+| `none` | 无 | 只解析、可作为 `depends_on` 目标 |
+
+发现范围始终包含顶层 `governed_globs`；缩小 `types` 不会让顶层 globs 覆盖的文件静默消失。
+迁移时先跑 phase 0，修完 routing error 再切 phase 1。legacy `{"type":"idea"}` / `{"type":"spec"}`
+继续有效；新 policy 使用 `standard_version: 2`，multi 模式要求 2。
+
 ## 执行拆解 tasks.md
 
 `Approved` / `Implemented` 的 Spec 需要在同目录提交 `tasks.md`；`Draft` / `In Review` 可选。它从 `spec.md` 派生，用依赖表达顺序，不复制架构。
@@ -136,7 +163,7 @@ depends_on:
 ```
 
 `depends_on` 里的路径相对仓库根，允许 `./`、`..`（不得越出仓库）、反斜杠和重复斜杠；
-大小写敏感。
+大小写敏感。`type` 在多类型模式下是 load-bearing 字段：它决定套用哪组规则，修改它需要评审保护。
 
 ## 退出码
 
@@ -144,7 +171,7 @@ depends_on:
 |---|---|
 | 0 | 干净，或 `-phase 0` 的只报告模式，或 `-phase 1` 性能预算降级（≤200 篇受管文档单次超过 2 秒时只警告） |
 | 1 | 存在违规且处于阻断状态 |
-| 2 | 策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、未降级时存在解析错误 |
+| 2 | 策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、未降级时存在解析或 routing 错误 |
 
 `-phase 2` 不参与性能预算降级；覆盖断言与策略加载错误在降级时仍退出 2。
 
@@ -162,6 +189,7 @@ depends_on:
 ├── policy/                  Rego 规则与标准（唯一事实来源）
 ├── testdata/example-repo/   可运行的 Spec 示例语料
 ├── testdata/idea-repo/      可运行的 idea 示例语料
+├── testdata/mixed-repo/     可运行的多类型示例语料
 ├── tools/qualitycheck/      Spec / idea 内容质量评分卡审计器
 ├── tools/taskscheck/         tasks.md 执行拆解闸门
 ├── docs/
@@ -196,7 +224,8 @@ depends_on:
 - Agent hook 未安装时是静默无操作，当前无检测手段。
 - 插件分发只支持 darwin/arm64、darwin/amd64、linux/amd64、linux/arm64；Windows 不在 v0.1 范围内。
 - `taskscheck` v1 只硬覆盖 Goal，REQ 覆盖只报告；没有 baseline；`Draft` / `In Review` 的 Spec 不强制 `tasks.md`。
-- `document_types` 是仓库级配置；tasks 由独立二进制检查，不并入 mdstandards 的类型系统。
+- 多类型模式要求每个受管文件带可识别的 `type:`；`type:` 与 `.mdstandards.json` 的 `types` 都是 load-bearing，需要 CODEOWNERS/评审保护。
+- tasks 由独立二进制检查，不并入 mdstandards 的规则系统；`type: tasks` 只让 mdstandards 解析该文档。
 
 ## 命令
 
