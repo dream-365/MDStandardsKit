@@ -169,6 +169,23 @@ jobs:
           want=$(find testdata/idea-repo -type f -name '*.md' | wc -l | tr -d ' ')
           printf '%s\n' "$out" | grep -q "scanned $want documents, evaluated 0 edges"
 
+      - name: mixed corpus smoke
+        env:
+          WITH_GO: ${{ matrix.with_go }}
+          BASE_URL: file://${{ github.workspace }}/release
+        run: |
+          set -eu
+          cache=$(mktemp -d)
+          if [ "$WITH_GO" = "true" ]; then
+            out=$(env XDG_CACHE_HOME="$cache" MDSTANDARDS_SKIP_DOWNLOAD=1 \
+              ./bin/doc-writer-tool mdstandards -root testdata/mixed-repo -policy policy -phase 1 -format table)
+          else
+            out=$(env PATH=/usr/bin:/bin XDG_CACHE_HOME="$cache" MDSTANDARDS_RELEASE_BASE_URL="$BASE_URL" \
+              ./bin/doc-writer-tool mdstandards -root testdata/mixed-repo -policy policy -phase 1 -format table)
+          fi
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" | grep -q "scanned 6 documents, evaluated 1 edges"
+
       - name: taskscheck smoke
         env:
           WITH_GO: ${{ matrix.with_go }}
@@ -188,6 +205,8 @@ jobs:
     needs: smoke
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: release
@@ -196,6 +215,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: release/*
+          body_path: docs/releases/${{ github.ref_name }}.md
 
   cross-version:
     needs: publish

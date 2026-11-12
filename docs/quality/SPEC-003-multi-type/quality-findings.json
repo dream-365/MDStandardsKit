@@ -1,0 +1,602 @@
+{
+  "schema_version": 1,
+  "rubric_version": "1.1.0",
+  "rubric_sha256": "1e6c4740ed85512b1657e6798e481c893fe015f4ce2a140665ff6ecb2ef7b29e",
+  "target": "docs/specs/SPEC-003-multi-type/spec.md",
+  "target_sha256": "53f186ffa57eb09df3ebf0d47c8b6c95e941d850ecbcd39d6165ffc588dea4f0",
+  "reviewer": {
+    "role": "independent",
+    "model": "claude",
+    "session_id": "reviewer-spec-003-20261112",
+    "started_at": "2026-11-12T14:00:00+08:00"
+  },
+  "items": [
+    {
+      "id": "bg.current_state",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.1 系统现状",
+          "quote": "`mdstandards` 是单二进制元数据闸门：读取仓库根 `.mdstandards.json` 声明的**仓库级**文档类型，从 `policy/data/standard.json` 取出对应档案，遍历该类型的 globs，构建语料后交给 Rego 求值。"
+        }
+      ],
+      "rationale": "写清了单二进制职责、配置→档案→globs→语料→Rego 的核心流程，并由 main.go、policy/*.rego 与 JSON 配置交代技术栈。",
+      "missing": ""
+    },
+    {
+      "id": "bg.failure_chain",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "2. `.mdstandards.json` 只能声明一种类型。要检查 idea，就得把仓库切到 `{\"type\":\"idea\"}`，spec 的引用图检查随之消失；要检查 spec，idea 规则又不再运行。"
+        },
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "3. frontmatter `type:` 只是被记录下来，不决定规则。把一篇 spec 改成 `type: tasks` 不会改变任何检查结果；反过来，所有类型都被 spec 规则扫描，changelog 的空 `depends_on`、index 的 `status` 也会被当作引用图节点。"
+        }
+      ],
+      "rationale": "1.2 用编号 1–3 给出从多类型文档并存到检查范围丢失、规则误伤的分步失败链。",
+      "missing": ""
+    },
+    {
+      "id": "bg.trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.3 重构/设计动机",
+          "quote": "触发点是“类型已经是文件事实，但工具只认仓库级配置”，继续用仓库级单选会让检查范围随着配置切换而丢失。"
+        }
+      ],
+      "rationale": "点明“类型已是文件事实”这一触发点，并解释继续现状会导致检查范围丢失，即为何现在做。",
+      "missing": ""
+    },
+    {
+      "id": "bg.non_goals",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.4 非目标",
+          "quote": "不做多类型分流的后果见 1.2：要么一次只能检查一种类型，要么所有类型被同一套规则误伤。本次明确不做："
+        }
+      ],
+      "rationale": "先说明不做的后果，再以列表给出本次非目标，满足“后果 + 非目标清单”。",
+      "missing": ""
+    },
+    {
+      "id": "bg.pain_evidence",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "- `extract.go:154-156` 写入 `Document.Type`，但 `policy/*.rego` 中没有任何 `doc.type` 引用。"
+        },
+        {
+          "section": "1.2 核心技术痛点",
+          "quote": "- 根仓库 `phase 1` 实测扫描 10 篇受管文档，其中只有 3 篇是 `type: spec`；其余 7 篇（architecture / changelog / tasks / index）仍被 spec 规则扫描。"
+        }
+      ],
+      "rationale": "给出带文件行号、测试名与仓库实测数字（10 篇中仅 3 篇为 spec）的可核实证据，且直接对应 1.2 失败链。",
+      "missing": ""
+    },
+    {
+      "id": "goal.verifiable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "- **G1 配置双模式与校验**：`.mdstandards.json` 支持 legacy `{\"type\":\"...\"}` 与 multi `{\"types\":[...]}`；文件缺失仍是 legacy spec；`type`/`types` 恰好一个非 null；`{}`、显式 null、空/重复 `types`、未知键都 exit 2；legacy 只允许 `spec`/`idea`；`types` 条目 trim 后匹配档案。验收：`TestLoadRepoConfig*`、`TestMultiConfig*`、`TestLegacyArchitectureTypeRejected`。"
+        }
+      ],
+      "rationale": "G1–G6 每条都以「验收：」列出测试、文档评审或 release smoke 等验收方式，每个 Goal 均可验收。",
+      "missing": ""
+    },
+    {
+      "id": "goal.quantified",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "零受管文档、phase ≥ 1 零解析仍 exit 2"
+        }
+      ],
+      "rationale": "G4 含 phase ≥ 1、零文档、exit 2 等明确数值阈值，G5/G6 另有 standard_version 1/2 与 v0.3.0，满足“至少一个 Goal 有数字或明确阈值”。",
+      "missing": ""
+    },
+    {
+      "id": "goal.count",
+      "status": "scored",
+      "level": 1,
+      "evidence": [
+        {
+          "section": "2.1 目标",
+          "quote": "- **G1 配置双模式与校验**：`.mdstandards.json` 支持 legacy `{\"type\":\"...\"}` 与 multi `{\"types\":[...]}`；文件缺失仍是 legacy spec；`type`/`types` 恰好一个非 null；`{}`、显式 null、空/重复 `types`、未知键都 exit 2；legacy 只允许 `spec`/`idea`；`types` 条目 trim 后匹配档案。验收：`TestLoadRepoConfig*`、`TestMultiConfig*`、`TestLegacyArchitectureTypeRejected`。"
+        }
+      ],
+      "rationale": "2.1 现为 G1–G6 共 6 个 Goal，落在 3–6 区间，满足数量上限，但未按架构/性能/可靠性分类。",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.labeled",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG1** 通用声明式类型 schema / 规则 DSL（Deferred to Phase 2）。"
+        },
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG8** 文档状态流转校验（本次不做；沿用现有 `status` 语义；审批来源校验归 NG3）。"
+        }
+      ],
+      "rationale": "NG1–NG8 每条都显式标注「Deferred to Phase 2」或「本次不做」，无遗漏。",
+      "missing": ""
+    },
+    {
+      "id": "nongoal.not_dumping_ground",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG5** per-type 零文档覆盖断言（本次只 warning；Deferred to Phase 2）。"
+        },
+        {
+          "section": "2.2 非目标",
+          "quote": "- **NG8** 文档状态流转校验（本次不做；沿用现有 `status` 语义；审批来源校验归 NG3）。"
+        }
+      ],
+      "rationale": "各 NG 均落在本次多类型路由的范围边界内，或对应 G4 覆盖语义、状态语义与信任边界，非无关清单。",
+      "missing": ""
+    },
+    {
+      "id": "arch.solution_shape",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "    Config[.mdstandards.json] --> Plan[buildRunPlan]\n    Standard[standard.json v2] --> Plan\n    Plan -->|legacy| Extract[Extract]\n    Plan -->|multi| ExtractMulti[ExtractMulti]"
+        }
+      ],
+      "rationale": "3.1 用 mermaid 画出本次变更的配置→运行计划→提取/路由→语料→Rego→finding→报告数据流。",
+      "missing": ""
+    },
+    {
+      "id": "arch.topology",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3.1 总体架构",
+          "quote": "    Route --> Corpus[Corpus mode=multi, canonical type]\n    Corpus --> Rego[types.rego 作用域]\n    Rego --> Findings[findings]\n    Findings --> Report[table / json / github]"
+        }
+      ],
+      "rationale": "拓扑图每个节点带职责标签（buildRunPlan、frontmatter type + path 兼容、types.rego 作用域等），3.3 再说明计划、提取与 Rego 阶段的职责。",
+      "missing": ""
+    },
+    {
+      "id": "arch.change_set",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "**新增**："
+        },
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "**改造**："
+        },
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "**保持不变**："
+        }
+      ],
+      "rationale": "3.2 分「新增 / 改造 / 保持不变」三块逐项列出组件与文件，变更集完整。",
+      "missing": ""
+    },
+    {
+      "id": "arch.rationale",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3.4 关键选型与约束",
+          "quote": "- **opt-in 多类型模式**：只有 `{\"types\":[...]}` 才启用；缺失文件或 `{\"type\":\"...\"}` 继续 legacy，避免存量仓库行为漂移。"
+        },
+        {
+          "section": "3.4 关键选型与约束",
+          "quote": "- 详细方案对比与淘汰理由见第 7 章。"
+        }
+      ],
+      "rationale": "3.4 给出关键选型理由，并显式把详细方案对比与淘汰理由指向第 7 章。",
+      "missing": ""
+    },
+    {
+      "id": "arch.references_source",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "3. 架构设计与核心方案",
+          "quote": "全局组件、代码布局与执行点见 [架构文档](../../architecture/mdstandards-architecture.md)；本节只描述多类型路由的变更范围。"
+        }
+      ],
+      "rationale": "frontmatter depends_on 指定架构文档，3.1 明确引用它并声明本节只写本次变更范围，未自行展开全局结构。",
+      "missing": ""
+    },
+    {
+      "id": "design.contract",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4. 详细设计",
+          "quote": "{\n  \"standard\": {\n    \"standard_version\": \"2\",\n    \"governed_globs\": [\"docs/specs/**/*.md\", \"docs/architecture/**/*.md\"],"
+        }
+      ],
+      "rationale": "4.2、4.3 分别给出配置文件、standard.json 与 Corpus 的数据/接口契约。",
+      "missing": ""
+    },
+    {
+      "id": "design.data_model",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.3 数据模型与契约",
+          "quote": "{\n  \"standard\": {\n    \"standard_version\": \"2\",\n    \"governed_globs\": [\"docs/specs/**/*.md\", \"docs/architecture/**/*.md\"],"
+        },
+        {
+          "section": "4.3 数据模型与契约",
+          "quote": "- `rule_set: idea` 必须有 `required_fields`、`status_values`、`required_headings`、`id_pattern`、`placeholder_markers`；`date_field` 可选，缺省 `date`。"
+        }
+      ],
+      "rationale": "JSON 示例交代字段类型，校验规则明确必填项、取值与版本约束，字段、必填、校验三者齐备。",
+      "missing": ""
+    },
+    {
+      "id": "design.interface",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.4 接口与协议",
+          "quote": "mdstandards -root . -policy ./policy -phase 0|1|2 -format table|json|github [-out findings.json]"
+        },
+        {
+          "section": "4.4 接口与协议",
+          "quote": "- 配置输入：`.mdstandards.json`（见 4.2）与 `policy/data/standard.json`（见 4.3）。\n- 语料响应：`-dump-corpus` 输出 Corpus JSON（见 4.3），legacy 逐字节兼容。\n- 规则输出：`table` / `json` / `github`，findings 与 `extract_errors` 分离；退出码见 4.6。"
+        }
+      ],
+      "rationale": "4.4 给出 CLI 方法签名式用法、配置输入、Corpus 响应、规则输出与退出码引用，请求/响应/状态码齐备。",
+      "missing": ""
+    },
+    {
+      "id": "design.sequence",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.5 核心流程与时序",
+          "quote": "   - 缺失 / 非字符串 / 空串 → routing error。\n   - 不在启用类型集合 → routing error。\n   - 路径不命中该类型 globs（类型 `spec` 用顶层 globs）→ routing error。"
+        },
+        {
+          "section": "4.5 核心流程与时序",
+          "quote": "3. routing error 计入 `extract_errors`，与解析错误同语义：phase 0 只报告；phase ≥ 1 未降级时 exit 2；降级时 report-only。"
+        }
+      ],
+      "rationale": "4.5 用编号步骤描述构建运行计划、逐文件路由、routing error 与 Rego 求值，并显式包含异常路径与降级语义。",
+      "missing": ""
+    },
+    {
+      "id": "design.errors",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "4.6 异常处理与错误码",
+          "quote": "| 配置错误 | 双键、空 types、未知 profile、版本不符、空顶层 globs/statuses | 求值前 exit 2 |"
+        },
+        {
+          "section": "4.6 异常处理与错误码",
+          "quote": "| routing error | 缺 type、未知/未启用 type、type/path 不匹配 | `extract_errors`；phase ≥ 1 未降级 exit 2，降级 report-only |"
+        }
+      ],
+      "rationale": "4.6 错误分类表逐类给出示例（触发场景）与处理策略，并补充覆盖断言与退出码表。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.measurable",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-2 性能**：沿用现有 2 秒预算（`main.go:26` 的 `agentHookBudget`）；新增路由与 path 校验为 O(类型数 × glob 数)，单文件开销 [estimated] < 1ms，上线前用 `perf_test.go` 实测。验收：`perf_test.go`、phase 1 预算测试。"
+        }
+      ],
+      "rationale": "NFR-1–NFR-6 每条都带「验收：」测试/命令/检查；NFR-2 另有 2 秒预算与 [estimated] 单文件开销。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.coverage",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-2 性能**：沿用现有 2 秒预算（`main.go:26` 的 `agentHookBudget`）；新增路由与 path 校验为 O(类型数 × glob 数)，单文件开销 [estimated] < 1ms，上线前用 `perf_test.go` 实测。验收：`perf_test.go`、phase 1 预算测试。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-3 安全**：配置与标准严格解析；routing error 100% 计入 `extract_errors`，不静默；`--policy-from-head` 覆盖 config。验收：`TestLoadRepoConfig*`、`TestMultiRouting*`、`TestPolicyFromHeadConfig*`。"
+        },
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-4 可观测性**：每条 routing error 带明确 reason；启用类型零文档 warning 按类型名排序；每条 finding 保留 `rule`、`document`、`target`、`message`。验收：`TestMultiErrorReasons`、`TestMultiZeroDocWarning`。"
+        }
+      ],
+      "rationale": "覆盖性能、安全、可观测性，并以确定性、兼容性与可回滚项覆盖可靠性类别。",
+      "missing": ""
+    },
+    {
+      "id": "nfr.honesty",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "5. 非功能性需求",
+          "quote": "- **NFR-2 性能**：沿用现有 2 秒预算（`main.go:26` 的 `agentHookBudget`）；新增路由与 path 校验为 O(类型数 × glob 数)，单文件开销 [estimated] < 1ms，上线前用 `perf_test.go` 实测。验收：`perf_test.go`、phase 1 预算测试。"
+        }
+      ],
+      "rationale": "未实测的单文件开销明确标 [estimated]，并说明上线前用 perf_test.go 实测；2 秒预算注明来源。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.1 发布与灰度",
+          "quote": "1. 先发布包含本 Spec 的插件版本（目标 `v0.3.0`），`plugin.json`、README 安装 tag 与 release tag 一致。\n2. 在 `testdata/mixed-repo` 与根仓库 dogfood 上跑 phase 1；再选一个真实混合仓库灰度。\n3. `standard_version` 升到 2；发布说明写明旧二进制 + 新 policy 会 exit 2，旧二进制遇到 `{\"types\":[...]}` 也会因未知键 exit 2。"
+        }
+      ],
+      "rationale": "给出发布版本与 tag 约束，安排 testdata/dogfood/真实仓库的渐进灰度，并说明版本兼容风险。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.migration",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.2 数据迁移与兼容性",
+          "quote": "1. 确认 `-policy` 指向随本版本发布的 `standard_version: 2` bundle；自定义 policy 需补 `rule_set`、`globs`、`document_types`，否则 multi 在求值前 exit 2。\n2. 用 `{\"types\":[\"spec\",\"architecture\",\"changelog\",\"tasks\",\"index\"]}` 替换 legacy `{\"type\":...}`（不是追加），列出仓库实际出现的全部类型；`types` 条目 trim 后必须与档案键一致。\n3. 为每个受管文件补齐 frontmatter `type:`，并确保路径命中该类型 globs。"
+        }
+      ],
+      "rationale": "6.2 提供从确认 policy、写 types 配置到补齐 frontmatter、phase 0/1 的完整迁移 recipe，并保留 legacy 回退路径。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.smoke",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.3 上线验证与冒烟",
+          "quote": "观察指标：`documents_matched`、`documents_parsed`、`edges_evaluated`、routing error 数、phase 1 耗时。通过条件：routing error 为 0；phase 1 耗时 ≤ 2 秒；legacy golden 逐字节一致。"
+        }
+      ],
+      "rationale": "6.3 明确列出观察指标、通过条件与 5 条冒烟步骤，冒烟清单与指标齐备。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_trigger",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "- 熔断触发：legacy golden 回归；灰度仓库出现任一合法 type/path 文件被判 routing error（routing error 率 > 0）；`make check` 或 release smoke 失败；phase 1 超过 2 秒预算。"
+        }
+      ],
+      "rationale": "触发条件含 routing error 率 > 0、phase 1 超过 2 秒等可观测数字阈值，另有 golden/make check 失败等可观测事件。",
+      "missing": ""
+    },
+    {
+      "id": "rollout.rollback_steps",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "6.4 回滚与熔断",
+          "quote": "- 回滚：移除 `.mdstandards.json` 整个文件，或改写为 `{\"type\":\"spec\"}`（原 idea 仓库写 `{\"type\":\"idea\"}`），回到 legacy；必要时整体回退二进制与 policy 到上一版本。"
+        }
+      ],
+      "rationale": "回滚动作具体可执行：移除配置或改写为 legacy 单类型，必要时整体回退二进制与 policy。",
+      "missing": ""
+    },
+    {
+      "id": "alts.status_quo",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "| Status Quo | 零改动 | 一次只能检查一种类型；frontmatter type 是死数据 | 否决 |"
+        }
+      ],
+      "rationale": "Status Quo 行明确写出零改动成本与“一次只能查一种类型、type 是死数据”的风险。",
+      "missing": ""
+    },
+    {
+      "id": "alts.rejected",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "| 方案 C：纯路径路由 | 实现简单、无需 frontmatter | 用户要求按元数据识别；重命名路径会改变规则 | 否决 |"
+        }
+      ],
+      "rationale": "方案 C/D 等被否决，淘汰原因对应用户要求按元数据识别、报告合并与执行点控制等当前约束。",
+      "missing": ""
+    },
+    {
+      "id": "alts.matrix",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "| 方案 | 优点 | 缺点 | 结论 |"
+        }
+      ],
+      "rationale": "第 7 章以方案/优点/缺点/结论矩阵做权衡，维度覆盖兼容性、通用性与实现面等本方案约束。",
+      "missing": ""
+    },
+    {
+      "id": "alts.consistency",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "7. 替代方案与权衡",
+          "quote": "| 方案 A：`types` + frontmatter 路由 + `rule_set` | 最小改动、legacy 兼容、规则按文件分流 | 类型/路径需同时维护；不是通用 DSL | **采用** |"
+        }
+      ],
+      "rationale": "采用项（types + frontmatter 路由 + rule_set）与 G1/G2/G3/G5 的目标及第 3 章选型一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.goals_trace",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **REQ-001** legacy `{\"type\":\"spec\"|\"idea\"}` 与缺失文件行为不变；覆盖 G1/G5；验收 `TestLegacy*`。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-006** `rule_set` 三作用域与逐文档 Rego 守卫；覆盖 G3；验收 `TestMultiRuleScope*`。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-008** multi 边统计、零边断言、零文档 warning；覆盖 G4；验收 `TestMultiCoverage*`。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **REQ-013** 文档、迁移与发布同步；覆盖 G6；验收架构/README/standard、`testdata/mixed-repo`、CI smoke、`plugin.json` v0.3.0、release note。"
+        }
+      ],
+      "rationale": "4.8 的 REQ 列表把设计需求与验收回映到 G1–G6，第 4–6 章分别承接对应目标。",
+      "missing": ""
+    },
+    {
+      "id": "x.nfr_arch",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **NFR-2 性能**：沿用现有 2 秒预算（`main.go:26` 的 `agentHookBudget`）；新增路由与 path 校验为 O(类型数 × glob 数)，单文件开销 [estimated] < 1ms，上线前用 `perf_test.go` 实测。验收：`perf_test.go`、phase 1 预算测试。"
+        },
+        {
+          "section": "全文",
+          "quote": "- **`rule_set` 是轻量规则选择器**：不实现通用 schema；`spec` / `idea` / `none` 三个作用域足以覆盖当前仓库。"
+        }
+      ],
+      "rationale": "NFR 的确定性、性能、安全、可观测性分别对应 corpus 兼容、O(类型×glob) 路由、信任边界与 warning/reason 设计，未见矛盾。",
+      "missing": ""
+    },
+    {
+      "id": "x.rollback_release",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "1. 先发布包含本 Spec 的插件版本（目标 `v0.3.0`），`plugin.json`、README 安装 tag 与 release tag 一致。"
+        },
+        {
+          "section": "全文",
+          "quote": "- 回滚：移除 `.mdstandards.json` 整个文件，或改写为 `{\"type\":\"spec\"}`（原 idea 仓库写 `{\"type\":\"idea\"}`），回到 legacy；必要时整体回退二进制与 policy 到上一版本。"
+        }
+      ],
+      "rationale": "发布为 opt-in multi + legacy 兼容，回滚正是移除/改写配置回到 legacy 或整体回退版本，二者路径一致。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_placeholders",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "## 附录 A：未决问题"
+        },
+        {
+          "section": "全文",
+          "quote": "- per-type `dependable_statuses` 是否在 v2 引入。"
+        }
+      ],
+      "rationale": "全文未用 无/.../待补充/TBD 充当实质回答；附录 A 是显式列出的未决问题而非占位。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_code",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "{\"type\": \"idea\"}"
+        }
+      ],
+      "rationale": "代码块仅为 JSON 契约、CLI 用法与 mermaid 图，没有实现代码、测试日志或偶发报错堆砌。",
+      "missing": ""
+    },
+    {
+      "id": "x.numbers_sourced",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "- **NFR-2 性能**：沿用现有 2 秒预算（`main.go:26` 的 `agentHookBudget`）；新增路由与 path 校验为 O(类型数 × glob 数)，单文件开销 [estimated] < 1ms，上线前用 `perf_test.go` 实测。验收：`perf_test.go`、phase 1 预算测试。"
+        }
+      ],
+      "rationale": "2 秒预算注明来源 main.go:26，未实测的 <1ms 标 [estimated]，1.2 的 10/3/7 篇注明来自仓库实测。",
+      "missing": ""
+    },
+    {
+      "id": "x.no_fabricated_refs",
+      "status": "scored",
+      "level": 2,
+      "evidence": [
+        {
+          "section": "全文",
+          "quote": "depends_on:\n  - docs/architecture/mdstandards-architecture.md"
+        },
+        {
+          "section": "全文",
+          "quote": "| 关联资源 | [架构](../../architecture/mdstandards-architecture.md)、[SPEC-002](../SPEC-002-idea-type/spec.md) |"
+        }
+      ],
+      "rationale": "depends_on 与关联资源路径一致、无 M<N> 标记，引用形态未发现捏造迹象。",
+      "missing": ""
+    }
+  ]
+}

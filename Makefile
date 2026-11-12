@@ -16,6 +16,7 @@ vet:
 check: build vet test taskscheck
 	./$(BINARY) -root . -policy ./policy -phase 1 -format table
 	./$(BINARY) -root ./testdata/idea-repo -policy ./policy -phase 1 -format table
+	./$(BINARY) -root ./testdata/mixed-repo -policy ./policy -phase 1 -format table
 	./$(TASKSCHECK) -root . -phase 1
 
 taskscheck:

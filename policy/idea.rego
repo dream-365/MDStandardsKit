@@ -2,20 +2,14 @@ package mdstandards
 
 import rego.v1
 
-# Idea rules only run when the repository declared type: idea. The CLI
-# rejects a missing profile before evaluation; this guard keeps the bundle
-# honest when it is run directly with opa eval.
-is_idea if {
-	object.get(input, "document_type", "spec") == "idea"
-}
-
-profile := data.standard.document_types.idea
-
+# Idea rules run only for documents whose rule_set is idea. In legacy mode,
+# types.rego maps input.document_type == "idea" to the same scope.
 # The extractor fills doc.missing for idea documents, so Rego does not need
 # to guess whether an omitted JSON field means "missing" or "empty".
+
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	some field in doc.missing
 	finding := {
 		"rule": "idea.missing_field",
@@ -27,8 +21,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	object.get(doc, "title", "") == ""
 	finding := {
 		"rule": "idea.empty_title",
@@ -40,24 +34,25 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.id
-	not regex.match(profile.id_pattern, doc.id)
+	not regex.match(profile_for(doc).id_pattern, doc.id)
 	finding := {
 		"rule": "idea.id_format",
 		"document": doc.path,
 		"target": doc.id,
 		"severity": "error",
-		"message": sprintf("%s has id %q, which does not match %s", [doc.path, doc.id, profile.id_pattern]),
+		"message": sprintf("%s has id %q, which does not match %s", [doc.path, doc.id, profile_for(doc).id_pattern]),
 	}
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.id
 	some other in input.documents
+	is_idea_scope(other)
 	other.path != doc.path
 	other.id == doc.id
 	finding := {
@@ -70,8 +65,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.date
 	not regex.match("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", doc.date)
 	finding := {
@@ -84,8 +79,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.date
 	regex.match("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", doc.date)
 	doc.date_invalid
@@ -99,8 +94,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	parts := split(doc.path, "/")
 	count(parts) != 3
 	finding := {
@@ -113,8 +108,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	parts := split(doc.path, "/")
 	count(parts) == 3
 	not regex.match("^20[0-9]{2}$", parts[0])
@@ -128,8 +123,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	parts := split(doc.path, "/")
 	count(parts) == 3
 	not regex.match("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", parts[1])
@@ -143,8 +138,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	parts := split(doc.path, "/")
 	count(parts) == 3
 	doc.date
@@ -159,8 +154,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	parts := split(doc.path, "/")
 	count(parts) == 3
 	doc.date
@@ -175,10 +170,10 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.status
-	not status_allowed(doc.status)
+	not status_allowed(doc, doc.status)
 	finding := {
 		"rule": "idea.status_invalid",
 		"document": doc.path,
@@ -188,14 +183,14 @@ deny contains finding if {
 	}
 }
 
-status_allowed(s) if {
-	some v in profile.status_values
+status_allowed(doc, s) if {
+	some v in profile_for(doc).status_values
 	v == s
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.tags_invalid
 	finding := {
 		"rule": "idea.tags_invalid",
@@ -207,9 +202,9 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
-	some heading in profile.required_headings
+	is_idea_scope(doc)
+	some heading in profile_for(doc).required_headings
 	not heading_present(doc, heading)
 	finding := {
 		"rule": "idea.heading_missing",
@@ -227,8 +222,8 @@ heading_present(doc, heading) if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	some s in doc.sections
 	s.placeholder
 	finding := {
@@ -241,8 +236,8 @@ deny contains finding if {
 }
 
 deny contains finding if {
-	is_idea
 	some doc in input.documents
+	is_idea_scope(doc)
 	doc.id == "ABCDEFGH"
 	finding := {
 		"rule": "idea.placeholder_remaining",

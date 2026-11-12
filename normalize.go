@@ -13,7 +13,7 @@ var (
 	errURL          = errors.New("url is not a document path")
 )
 
-// NormalizeRepoPath applies the bounded normalization agreed in D6 and D12:
+// NormalizeRepoPath applies the bounded normalization agreed in D6 and D16:
 // convert backslashes, collapse duplicate and trailing slashes, resolve "..",
 // reject absolute paths and URLs, and reject anything that resolves outside
 // the repository root. Case is preserved on every platform so macOS and Linux

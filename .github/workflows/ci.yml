@@ -30,6 +30,9 @@ jobs:
       - name: idea corpus smoke
         run: ./mdstandards -root ./testdata/idea-repo -policy ./policy -phase 1 -format github
 
+      - name: mixed corpus smoke
+        run: ./mdstandards -root ./testdata/mixed-repo -policy ./policy -phase 1 -format github
+
       - name: build taskscheck
         run: go build -o taskscheck ./tools/taskscheck
 

@@ -20,12 +20,12 @@ deny contains finding if {
 # case-sensitive. v1 is intentionally stricter than PDS-STD-004 8.5.2 because
 # reference notes are not parsed; see the design doc.
 deny contains finding if {
-	object.get(input, "document_type", "spec") == "spec"
 	some doc in input.documents
+	is_spec_scope(doc)
 	some target in doc.depends_on
 	target_doc := index[target]
 	status := object.get(target_doc, "status", "")
-	not dependable(status)
+	not dependable_for(target_doc, status)
 	finding := {
 		"rule": "refs.status_not_dependable",
 		"document": doc.path,
@@ -33,9 +33,4 @@ deny contains finding if {
 		"severity": "error",
 		"message": sprintf("%s depends on %s with status %q, which is not dependable", [doc.path, target, status]),
 	}
-}
-
-dependable(status) if {
-	some s in data.standard.dependable_statuses
-	s == status
 }

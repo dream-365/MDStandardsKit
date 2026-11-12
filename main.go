@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -9,13 +10,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/open-policy-agent/opa/rego"
 )
 
-const agentHookMaxDocs = 200
+const (
+	agentHookMaxDocs = 200
+	multiModeName    = "multi"
+)
 
 var (
 	version    = "dev"
@@ -53,11 +59,36 @@ type DocumentType struct {
 	IDPattern          string   `json:"id_pattern"`
 	DateField          string   `json:"date_field"`
 	Graph              bool     `json:"graph"`
+	RuleSet            string   `json:"rule_set"`
 	PlaceholderMarkers []string `json:"placeholder_markers"`
 }
 
-type repoConfig struct {
-	Type string `json:"type"`
+type repoMode int
+
+const (
+	legacyMode repoMode = iota
+	multiMode
+)
+
+type repoConfigFile struct {
+	Type  *string   `json:"type"`
+	Types *[]string `json:"types"`
+}
+
+type RepoConfig struct {
+	Mode  repoMode
+	Type  string
+	Types []string
+}
+
+type runPlan struct {
+	Mode          repoMode
+	LegacyType    string
+	LegacyProfile DocumentType
+	Globs         []string
+	Graph         bool
+	Profiles      map[string]DocumentType
+	SpecGlobs     []string
 }
 
 type standardFile struct {
@@ -131,51 +162,53 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
 		return 2
 	}
-	if std.StandardVersion != "1" {
+	if std.StandardVersion != "1" && std.StandardVersion != "2" {
 		fmt.Fprintf(stderr, "policy.load_error: unsupported standard_version %q\n", std.StandardVersion)
 		return 2
 	}
 
-	docType, err := loadRepoConfig(rootAbs)
+	var cfg RepoConfig
+	if *policyFromHead {
+		var configDirty bool
+		cfg, configDirty, err = loadRepoConfigFromHEAD(rootAbs)
+		if err != nil {
+			fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
+			return 2
+		}
+		if configDirty {
+			dirtyPolicy = true
+			fmt.Fprintln(stderr, "warning: .mdstandards.json differs from HEAD; running report-only")
+		}
+	} else {
+		cfg, err = loadRepoConfig(rootAbs)
+		if err != nil {
+			fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
+			return 2
+		}
+	}
+
+	plan, err := buildRunPlan(std, cfg)
 	if err != nil {
 		fmt.Fprintf(stderr, "policy.load_error: %v\n", err)
 		return 2
 	}
-
-	globs := std.GovernedGlobs
-	graph := true
-	var profile DocumentType
-	if docType == "spec" {
-		if len(std.DependableStatuses) == 0 {
-			fmt.Fprintln(stderr, "policy.load_error: dependable_statuses is empty")
-			return 2
-		}
-		if len(std.GovernedGlobs) == 0 {
-			fmt.Fprintln(stderr, "policy.load_error: governed_globs is empty")
-			return 2
-		}
-	} else {
-		p, ok := std.DocumentTypes[docType]
-		if !ok {
-			fmt.Fprintf(stderr, "policy.load_error: no document type %q in standard.json\n", docType)
-			return 2
-		}
-		profile = p
-		globs = p.Globs
-		graph = p.Graph
-		if len(globs) == 0 {
-			fmt.Fprintf(stderr, "policy.load_error: document type %q has no globs\n", docType)
-			return 2
-		}
+	if plan.Mode == multiMode && std.StandardVersion != "2" {
+		fmt.Fprintln(stderr, "policy.load_error: multi-type mode requires standard_version 2")
+		return 2
 	}
 
-	corpus, err := Extract(rootAbs, globs, docType, profile)
+	var corpus Corpus
+	if plan.Mode == multiMode {
+		corpus, err = ExtractMulti(rootAbs, plan.Globs, plan.Profiles, plan.SpecGlobs)
+	} else {
+		corpus, err = Extract(rootAbs, plan.Globs, plan.LegacyType, plan.LegacyProfile)
+		if err == nil && plan.LegacyType != "spec" {
+			corpus.DocumentType = plan.LegacyType
+		}
+	}
 	if err != nil {
 		fmt.Fprintf(stderr, "extract error: %v\n", err)
 		return 2
-	}
-	if docType != "spec" {
-		corpus.DocumentType = docType
 	}
 	if *dumpCorpus {
 		enc := json.NewEncoder(stdout)
@@ -186,16 +219,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	// Coverage assertions. A gate that scanned nothing must not report success.
 	if corpus.Stats.Matched == 0 {
-		fmt.Fprintf(stderr, "coverage error: governed_globs matched no files: %v\n", std.GovernedGlobs)
+		fmt.Fprintf(stderr, "coverage error: governed_globs matched no files: %v\n", plan.Globs)
 		return 2
 	}
 	if *phase >= 1 && corpus.Stats.Parsed == 0 {
 		fmt.Fprintln(stderr, "coverage error: no governed document parsed")
 		return 2
 	}
-	if *phase >= 1 && graph && corpus.Stats.Edges == 0 {
+	graphDocs := graphDocumentCount(corpus, plan)
+	if *phase >= 1 && plan.Graph && graphDocs > 0 && corpus.Stats.Edges == 0 {
 		fmt.Fprintln(stderr, "coverage error: the corpus has zero dependency edges")
 		return 2
+	}
+	if plan.Mode == multiMode {
+		warnEmptyTypes(stderr, corpus, plan)
 	}
 
 	findings, err := evalPolicy(context.Background(), policyDir, corpus)
@@ -280,38 +317,337 @@ func loadStandard(policyDir string) (Standard, error) {
 	if err != nil {
 		return Standard{}, err
 	}
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
 	var sf standardFile
-	if err := json.Unmarshal(b, &sf); err != nil {
+	if err := dec.Decode(&sf); err != nil {
 		return Standard{}, fmt.Errorf("invalid JSON: %w", err)
+	}
+	var trailing any
+	if err := dec.Decode(&trailing); err != io.EOF {
+		return Standard{}, fmt.Errorf("invalid JSON: trailing data")
 	}
 	return sf.Standard, nil
 }
 
 // loadRepoConfig reads the repository-level type declaration. A missing file
-// means spec, preserving the pre-idea behavior. Malformed JSON, unknown keys,
-// an empty type, or an unknown type fail closed before extraction.
-func loadRepoConfig(root string) (string, error) {
+// means legacy spec. A present file must declare exactly one non-null form.
+func loadRepoConfig(root string) (RepoConfig, error) {
 	b, err := os.ReadFile(filepath.Join(root, ".mdstandards.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return "spec", nil
+			return RepoConfig{Mode: legacyMode, Type: "spec"}, nil
 		}
-		return "", err
+		return RepoConfig{}, err
 	}
-	dec := json.NewDecoder(strings.NewReader(string(b)))
+	return loadRepoConfigBytes(b)
+}
+
+func loadRepoConfigBytes(b []byte) (RepoConfig, error) {
+	dec := json.NewDecoder(bytes.NewReader(b))
 	dec.DisallowUnknownFields()
-	var c repoConfig
+	var c repoConfigFile
 	if err := dec.Decode(&c); err != nil {
-		return "", fmt.Errorf("invalid .mdstandards.json: %w", err)
+		return RepoConfig{}, fmt.Errorf("invalid .mdstandards.json: %w", err)
 	}
 	var trailing any
 	if err := dec.Decode(&trailing); err != io.EOF {
-		return "", fmt.Errorf("invalid .mdstandards.json: trailing data")
+		return RepoConfig{}, fmt.Errorf("invalid .mdstandards.json: trailing data")
 	}
-	if c.Type == "" {
-		return "", fmt.Errorf(".mdstandards.json: type is required")
+	if c.Type == nil && c.Types == nil {
+		return RepoConfig{}, fmt.Errorf(".mdstandards.json: one of type or types is required")
 	}
-	return c.Type, nil
+	if c.Type != nil && c.Types != nil {
+		return RepoConfig{}, fmt.Errorf(".mdstandards.json: type and types are mutually exclusive")
+	}
+	if c.Type != nil {
+		t := *c.Type
+		if t == "" {
+			return RepoConfig{}, fmt.Errorf(".mdstandards.json: type is required")
+		}
+		if t != "spec" && t != "idea" {
+			return RepoConfig{}, fmt.Errorf(".mdstandards.json: type %q requires multi-type mode; use types", t)
+		}
+		return RepoConfig{Mode: legacyMode, Type: t}, nil
+	}
+
+	types := *c.Types
+	if len(types) == 0 {
+		return RepoConfig{}, fmt.Errorf(".mdstandards.json: types must not be empty")
+	}
+	seen := make(map[string]bool, len(types))
+	out := make([]string, 0, len(types))
+	for _, raw := range types {
+		t := strings.TrimSpace(raw)
+		if t == "" {
+			return RepoConfig{}, fmt.Errorf(".mdstandards.json: types entries must be non-empty")
+		}
+		if seen[t] {
+			return RepoConfig{}, fmt.Errorf(".mdstandards.json: duplicate type %q", t)
+		}
+		seen[t] = true
+		out = append(out, t)
+	}
+	return RepoConfig{Mode: multiMode, Types: out}, nil
+}
+
+func buildRunPlan(std Standard, cfg RepoConfig) (runPlan, error) {
+	if err := validateStandardProfiles(std); err != nil {
+		return runPlan{}, err
+	}
+	if cfg.Mode == legacyMode {
+		return buildLegacyPlan(std, cfg)
+	}
+	return buildMultiPlan(std, cfg)
+}
+
+// validateStandardProfiles validates every profile, not only the enabled ones.
+// Disabled profiles are inert at runtime, but a typo there must not survive
+// into a later enablement or a direct opa eval. The empty rule_set stays legal
+// for legacy v1 bundles, where the effective type supplies the fallback.
+func validateStandardProfiles(std Standard) error {
+	for name, profile := range std.DocumentTypes {
+		switch profile.RuleSet {
+		case "spec", "idea", "none", "":
+		default:
+			return fmt.Errorf("document type %q has invalid rule_set %q", name, profile.RuleSet)
+		}
+		if profile.Graph && profile.RuleSet != "spec" {
+			return fmt.Errorf("document type %q: graph requires rule_set spec", name)
+		}
+		if profile.RuleSet == "idea" {
+			if err := validateIdeaProfile(name, &profile); err != nil {
+				return err
+			}
+		}
+		if name == "spec" {
+			// document_types.spec.globs is ignored; governed_globs is authoritative.
+			continue
+		}
+		if len(profile.Globs) == 0 {
+			return fmt.Errorf("document type %q has no globs", name)
+		}
+		for _, g := range profile.Globs {
+			if strings.TrimSpace(g) == "" {
+				return fmt.Errorf("document type %q: globs must not contain empty entries", name)
+			}
+			if _, err := doublestar.Match(g, ""); err != nil {
+				return fmt.Errorf("document type %q: glob %q: %w", name, g, err)
+			}
+		}
+	}
+	return nil
+}
+
+func buildLegacyPlan(std Standard, cfg RepoConfig) (runPlan, error) {
+	p := runPlan{Mode: legacyMode, LegacyType: cfg.Type}
+	switch cfg.Type {
+	case "spec":
+		if len(std.DependableStatuses) == 0 {
+			return runPlan{}, fmt.Errorf("dependable_statuses is empty")
+		}
+		if len(std.GovernedGlobs) == 0 {
+			return runPlan{}, fmt.Errorf("governed_globs is empty")
+		}
+		p.Globs = std.GovernedGlobs
+		p.Graph = true
+		p.SpecGlobs = std.GovernedGlobs
+		p.LegacyProfile = DocumentType{Graph: true, RuleSet: "spec"}
+	case "idea":
+		profile, ok := std.DocumentTypes["idea"]
+		if !ok {
+			return runPlan{}, fmt.Errorf("no document type %q in standard.json", cfg.Type)
+		}
+		if len(profile.Globs) == 0 {
+			return runPlan{}, fmt.Errorf("document type %q has no globs", cfg.Type)
+		}
+		if err := validateIdeaProfile(cfg.Type, &profile); err != nil {
+			return runPlan{}, err
+		}
+		p.Globs = profile.Globs
+		p.Graph = profile.Graph
+		p.LegacyProfile = profile
+	default:
+		return runPlan{}, fmt.Errorf("legacy type %q requires multi-type mode", cfg.Type)
+	}
+	return p, nil
+}
+
+func buildMultiPlan(std Standard, cfg RepoConfig) (runPlan, error) {
+	if len(cfg.Types) == 0 {
+		return runPlan{}, fmt.Errorf("types must not be empty")
+	}
+	if len(std.DependableStatuses) == 0 {
+		return runPlan{}, fmt.Errorf("dependable_statuses is empty")
+	}
+
+	profiles := make(map[string]DocumentType, len(cfg.Types))
+	globs := make([]string, 0, len(std.GovernedGlobs))
+	seenGlobs := make(map[string]bool)
+	addGlob := func(g string) {
+		if g == "" || seenGlobs[g] {
+			return
+		}
+		seenGlobs[g] = true
+		globs = append(globs, g)
+	}
+	// The top-level baseline always participates in discovery, even when spec
+	// is not enabled. Files of unenabled types then surface as routing errors
+	// instead of disappearing.
+	for _, g := range std.GovernedGlobs {
+		addGlob(g)
+	}
+
+	seenTypes := make(map[string]bool, len(cfg.Types))
+	graph := false
+	for _, t := range cfg.Types {
+		if seenTypes[t] {
+			return runPlan{}, fmt.Errorf("duplicate type %q", t)
+		}
+		seenTypes[t] = true
+		profile, ok := std.DocumentTypes[t]
+		if !ok {
+			return runPlan{}, fmt.Errorf("no document type %q in standard.json", t)
+		}
+		switch profile.RuleSet {
+		case "spec", "idea", "none":
+		case "":
+			return runPlan{}, fmt.Errorf("document type %q has no rule_set", t)
+		default:
+			return runPlan{}, fmt.Errorf("document type %q has invalid rule_set %q", t, profile.RuleSet)
+		}
+		if profile.Graph && profile.RuleSet != "spec" {
+			return runPlan{}, fmt.Errorf("document type %q: graph requires rule_set spec", t)
+		}
+		if t == "spec" {
+			if len(std.GovernedGlobs) == 0 {
+				return runPlan{}, fmt.Errorf("spec is enabled but governed_globs is empty")
+			}
+		} else {
+			if len(profile.Globs) == 0 {
+				return runPlan{}, fmt.Errorf("document type %q has no globs", t)
+			}
+			for _, g := range profile.Globs {
+				addGlob(g)
+			}
+		}
+		if profile.RuleSet == "idea" {
+			if err := validateIdeaProfile(t, &profile); err != nil {
+				return runPlan{}, err
+			}
+		}
+		if profile.Graph {
+			graph = true
+		}
+		profiles[t] = profile
+	}
+	if len(globs) == 0 {
+		return runPlan{}, fmt.Errorf("discovery globs are empty")
+	}
+	return runPlan{
+		Mode:      multiMode,
+		Globs:     globs,
+		Graph:     graph,
+		Profiles:  profiles,
+		SpecGlobs: std.GovernedGlobs,
+	}, nil
+}
+
+func validateIdeaProfile(name string, profile *DocumentType) error {
+	if len(profile.RequiredFields) == 0 {
+		return fmt.Errorf("document type %q: idea profile needs required_fields", name)
+	}
+	if len(profile.StatusValues) == 0 {
+		return fmt.Errorf("document type %q: idea profile needs status_values", name)
+	}
+	if len(profile.RequiredHeadings) == 0 {
+		return fmt.Errorf("document type %q: idea profile needs required_headings", name)
+	}
+	if profile.IDPattern == "" {
+		return fmt.Errorf("document type %q: idea profile needs id_pattern", name)
+	}
+	if len(profile.PlaceholderMarkers) == 0 {
+		return fmt.Errorf("document type %q: idea profile needs placeholder_markers", name)
+	}
+	if profile.DateField == "" {
+		profile.DateField = "date"
+	}
+	return nil
+}
+
+func graphDocumentCount(corpus Corpus, plan runPlan) int {
+	if plan.Mode != multiMode {
+		if plan.Graph {
+			return len(corpus.Documents)
+		}
+		return 0
+	}
+	n := 0
+	for _, doc := range corpus.Documents {
+		if p, ok := plan.Profiles[doc.Type]; ok && p.Graph {
+			n++
+		}
+	}
+	return n
+}
+
+func warnEmptyTypes(stderr io.Writer, corpus Corpus, plan runPlan) {
+	counts := make(map[string]int, len(plan.Profiles))
+	for _, doc := range corpus.Documents {
+		counts[doc.Type]++
+	}
+	var empty []string
+	for t := range plan.Profiles {
+		if counts[t] == 0 {
+			empty = append(empty, t)
+		}
+	}
+	sort.Strings(empty)
+	for _, t := range empty {
+		fmt.Fprintf(stderr, "warning: enabled document type %q matched no parsed documents\n", t)
+	}
+}
+
+func loadRepoConfigFromHEAD(root string) (RepoConfig, bool, error) {
+	headBytes, headExists, err := gitShowFile(root, ".mdstandards.json")
+	if err != nil {
+		return RepoConfig{}, false, fmt.Errorf("git show HEAD:.mdstandards.json: %w", err)
+	}
+	workBytes, workErr := os.ReadFile(filepath.Join(root, ".mdstandards.json"))
+	workExists := workErr == nil
+	if workErr != nil && !os.IsNotExist(workErr) {
+		return RepoConfig{}, false, workErr
+	}
+
+	dirty := false
+	switch {
+	case headExists && !workExists:
+		dirty = true
+	case headExists && workExists && !bytes.Equal(headBytes, workBytes):
+		dirty = true
+	case !headExists && workExists:
+		dirty = true
+	}
+
+	if !headExists {
+		return RepoConfig{Mode: legacyMode, Type: "spec"}, dirty, nil
+	}
+	cfg, err := loadRepoConfigBytes(headBytes)
+	if err != nil {
+		return RepoConfig{}, dirty, err
+	}
+	return cfg, dirty, nil
+}
+
+func gitShowFile(root, rel string) ([]byte, bool, error) {
+	out, err := exec.Command("git", "-C", root, "show", "HEAD:"+rel).Output()
+	if err == nil {
+		return out, true, nil
+	}
+	if exec.Command("git", "-C", root, "cat-file", "-e", "HEAD:"+rel).Run() != nil {
+		return nil, false, nil
+	}
+	return nil, false, err
 }
 
 func evalPolicy(parent context.Context, policyDir string, corpus Corpus) ([]Finding, error) {
@@ -399,7 +735,7 @@ func gitPathDirty(root, path string) bool {
 
 // materializePolicyFromHEAD writes the committed policy bundle into a temp
 // directory so an Agent editing the working tree cannot change the rules that
-// judge it (D11). The dirty flag tells the caller to run report-only.
+// judge it (D15). The dirty flag tells the caller to run report-only.
 func materializePolicyFromHEAD(root, policyDir, baselinePath string) (string, bool, func(), error) {
 	noop := func() {}
 	rel, err := filepath.Rel(root, policyDir)
