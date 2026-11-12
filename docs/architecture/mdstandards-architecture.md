@@ -195,8 +195,7 @@ idea 语料额外带 `id`、`title`、`date`、`tags`、`sections`、`missing`�
 |---|---|
 | `refs.missing_target` | `depends_on` 指向的目标不在受管语料中 |
 | `refs.status_not_dependable` | 目标状态不在 `dependable_statuses` 中，或缺失 |
-| `extract.parse_error` | 受管文件无法解析（无 frontmatter、YAML 非法等） |
-| `extract.routing_error` | multi 模式缺 type、未知/未启用 type、type/path 不匹配（reason 区分四类） |
+| `extract.parse_error` | 受管文件无法解析（无 frontmatter、YAML 非法等）；或 multi 模式路由失败（缺 type、未知/未启用 type、type/path 不匹配，reason 区分） |
 | `policy.load_error` | 策略包加载失败、标准缺失，或 multi 文档档案缺 `rule_set` |
 
 ### 4.4 基线
@@ -214,7 +213,7 @@ idea 语料额外带 `id`、`title`、`date`、`tags`、`sections`、`missing`�
 |---|---|
 | 0 | 干净；或 `-phase 0` 的只报告模式；或 `-phase 1` 性能预算降级（≤200 篇受管文档单次超过 2 秒时只警告） |
 | 1 | 存在违规且处于阻断状态 |
-| 2 | 工具或抽取错误：策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、未降级时存在解析或 routing 错误 |
+| 2 | 工具或抽取错误：策略/配置加载失败、版本不支持、零受管文档、phase ≥ 1 零解析、需要依赖图的类型零依赖边、未降级时存在解析或 routing 错误 |
 
 ## 5. 规则与失败模式
 

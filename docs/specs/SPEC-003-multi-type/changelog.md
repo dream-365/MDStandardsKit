@@ -8,6 +8,18 @@ updated_at: 2026-11-12
 
 # Changelog: SPEC-003 多文档类型路由
 
+## [2026-11-12] - 独立验收修复
+
+- **修改类型**: Changed
+- **影响范围**: `main.go`、`policy/data/standard.json` 档案校验、架构文档规则表与退出码表、README 退出码表、测试矩阵、发布说明与 release workflow。
+- **变更原因**: 三方独立验收发现两个阻塞项：`rule_set`/`graph` 只校验已启用类型，legacy 与未启用档案的非法值可静默通过；架构文档声称存在 `extract.routing_error`，但实现统一以 `extract.parse_error` 输出。
+- **具体内容**:
+  - `buildRunPlan` 增加全档案校验：非空 `rule_set` 必须是 `spec`/`idea`/`none`，`graph: true` 必须配 `rule_set: spec`，`rule_set: idea` 必须有完整结构字段；legacy v1 仍允许 `rule_set` 缺省；非 spec 档案的 `globs` 不得为空、不得含空条目，pattern 必须可编译。
+  - 架构文档删除不存在的 `extract.routing_error`，routing error 归入 `extract.parse_error` 并保留 reason 区分；架构与 README 的 exit 2 行补“phase ≥ 1 零解析”。
+  - 补齐 Spec 点名的验收测试：`TestMultiIdeaRulesScoped`、`TestMultiRoutingPhase*`、`TestMultiZeroDocWarning`，并增加全档案校验测试。
+  - 新增 `docs/releases/v0.3.0.md`，写明旧二进制 + 新 policy、旧二进制 + `types` 配置、严格字段校验三类兼容风险；release workflow 从 `docs/releases/<tag>.md` 读取发布说明。
+- **状态变更**: 保持 `Implemented`；`spec.md` 未改动，`spec_sha256` 与质量产物 target SHA 不变。
+
 ## [2026-11-12] - 实现与收口
 
 - **修改类型**: Changed
