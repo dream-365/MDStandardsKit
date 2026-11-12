@@ -58,13 +58,68 @@ type Corpus struct {
 	ExtractErrors []ExtractError `json:"extract_errors"`
 	Stats         Stats          `json:"stats"`
 	DocumentType  string         `json:"document_type,omitempty"`
+	Mode          string         `json:"mode,omitempty"`
 }
+
+type docRoute func(path string, fm map[string]any) (DocumentType, string, error)
+
+type routingError struct{ msg string }
+
+func (e routingError) Error() string { return e.msg }
 
 // Extract walks every governed glob and turns matching files into a corpus.
 // Every governed file must produce either a document or an extract error; a
 // file is never silently dropped (design doc:131).
 func Extract(root string, governed []string, docType string, profile DocumentType) (Corpus, error) {
-	c := Corpus{Documents: []Document{}, ExtractErrors: []ExtractError{}}
+	return extract(root, governed, func(_ string, _ map[string]any) (DocumentType, string, error) {
+		return profile, docType, nil
+	}, "", nil)
+}
+
+// ExtractMulti routes each file by its frontmatter type. The top-level
+// governed globs are only the discovery baseline; the route decides which
+// profile applies and rejects files whose path does not match that type.
+func ExtractMulti(root string, governed []string, profiles map[string]DocumentType, specGlobs []string) (Corpus, error) {
+	return extract(root, governed, multiRoute(profiles, specGlobs), multiModeName, profiles)
+}
+
+func multiRoute(profiles map[string]DocumentType, specGlobs []string) docRoute {
+	return func(path string, fm map[string]any) (DocumentType, string, error) {
+		raw, ok := fm["type"]
+		if !ok || raw == nil {
+			return DocumentType{}, "", routingError{"missing frontmatter type in multi-type mode"}
+		}
+		s, ok := raw.(string)
+		if !ok {
+			return DocumentType{}, "", routingError{"frontmatter type must be a non-empty string"}
+		}
+		t := strings.TrimSpace(s)
+		if t == "" {
+			return DocumentType{}, "", routingError{"frontmatter type must be a non-empty string"}
+		}
+		profile, ok := profiles[t]
+		if !ok {
+			return DocumentType{}, "", routingError{fmt.Sprintf("document type %q is not enabled in .mdstandards.json", t)}
+		}
+		globs := profile.Globs
+		if t == "spec" {
+			globs = specGlobs
+		}
+		for _, g := range globs {
+			matched, err := doublestar.Match(g, path)
+			if err != nil {
+				return DocumentType{}, "", fmt.Errorf("glob %q: %w", g, err)
+			}
+			if matched {
+				return profile, t, nil
+			}
+		}
+		return DocumentType{}, "", routingError{fmt.Sprintf("document type %q does not allow path %s", t, path)}
+	}
+}
+
+func extract(root string, governed []string, route docRoute, mode string, profiles map[string]DocumentType) (Corpus, error) {
+	c := Corpus{Documents: []Document{}, ExtractErrors: []ExtractError{}, Mode: mode}
 	fsys := os.DirFS(root)
 	seen := make(map[string]bool)
 
@@ -87,14 +142,21 @@ func Extract(root string, governed []string, docType string, profile DocumentTyp
 			seen[np] = true
 			c.Stats.Matched++
 
-			doc, err := readDocument(fsys, np, docType, profile)
+			doc, effectiveType, err := readDocument(fsys, np, route)
 			if err != nil {
 				c.ExtractErrors = append(c.ExtractErrors, ExtractError{Path: np, Reason: err.Error()})
 				continue
 			}
+			if mode == multiModeName {
+				doc.Type = effectiveType
+				if profiles[effectiveType].Graph {
+					c.Stats.Edges += len(doc.DependsOn)
+				}
+			} else {
+				c.Stats.Edges += len(doc.DependsOn)
+			}
 			c.Documents = append(c.Documents, doc)
 			c.Stats.Parsed++
-			c.Stats.Edges += len(doc.DependsOn)
 		}
 	}
 
@@ -103,23 +165,28 @@ func Extract(root string, governed []string, docType string, profile DocumentTyp
 	return c, nil
 }
 
-func readDocument(fsys fs.FS, path, docType string, profile DocumentType) (Document, error) {
+func readDocument(fsys fs.FS, path string, route docRoute) (Document, string, error) {
 	info, err := fs.Stat(fsys, path)
 	if err != nil {
-		return Document{}, err
+		return Document{}, "", err
 	}
 	if info.Size() > maxDocBytes {
-		return Document{}, fmt.Errorf("file is %d bytes, limit is %d", info.Size(), maxDocBytes)
+		return Document{}, "", fmt.Errorf("file is %d bytes, limit is %d", info.Size(), maxDocBytes)
 	}
 	b, err := fs.ReadFile(fsys, path)
 	if err != nil {
-		return Document{}, err
+		return Document{}, "", err
 	}
 	fm, err := parseFrontmatter(b)
 	if err != nil {
-		return Document{}, err
+		return Document{}, "", err
 	}
-	return documentFromMap(path, fm, bodyAfterFrontmatter(b), docType, profile)
+	profile, effectiveType, err := route(path, fm)
+	if err != nil {
+		return Document{}, "", err
+	}
+	doc, err := documentFromMap(path, fm, bodyAfterFrontmatter(b), effectiveType, profile)
+	return doc, effectiveType, err
 }
 
 func parseFrontmatter(b []byte) (map[string]any, error) {
@@ -149,7 +216,7 @@ func parseFrontmatter(b []byte) (map[string]any, error) {
 	return m, nil
 }
 
-func documentFromMap(path string, m map[string]any, body, docType string, profile DocumentType) (Document, error) {
+func documentFromMap(path string, m map[string]any, body, effectiveType string, profile DocumentType) (Document, error) {
 	d := Document{Path: path, DependsOn: []string{}}
 	if v, ok := m["type"].(string); ok {
 		d.Type = v
@@ -184,14 +251,22 @@ func documentFromMap(path string, m map[string]any, body, docType string, profil
 		}
 	}
 
-	if docType == "idea" {
+	ruleSet := profile.RuleSet
+	if ruleSet == "" {
+		ruleSet = effectiveType
+	}
+	if ruleSet == "idea" {
+		dateField := profile.DateField
+		if dateField == "" {
+			dateField = "date"
+		}
 		if v, ok := m["id"].(string); ok {
 			d.ID = strings.TrimSpace(v)
 		}
 		if v, ok := m["title"].(string); ok {
 			d.Title = strings.TrimSpace(v)
 		}
-		if raw, ok := m["date"]; ok && raw != nil {
+		if raw, ok := m[dateField]; ok && raw != nil {
 			var valid bool
 			d.Date, valid = parseDate(raw)
 			if !valid {
@@ -211,7 +286,11 @@ func documentFromMap(path string, m map[string]any, body, docType string, profil
 			if field == "title" {
 				continue
 			}
-			if raw, ok := m[field]; !ok || raw == nil {
+			check := field
+			if field == "date" {
+				check = dateField
+			}
+			if raw, ok := m[check]; !ok || raw == nil {
 				d.Missing = appendUnique(d.Missing, field)
 			}
 		}

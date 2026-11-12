@@ -1,11 +1,41 @@
 {
   "standard": {
-    "standard_version": "1",
+    "standard_version": "2",
     "governed_globs": ["docs/specs/**/*.md", "docs/architecture/**/*.md", "adr/**/*.md"],
     "dependable_statuses": ["Approved", "Published"],
     "identity": "repo_relative_path",
     "document_types": {
+      "spec": {
+        "rule_set": "spec",
+        "graph": true
+      },
+      "architecture": {
+        "rule_set": "spec",
+        "graph": false,
+        "globs": ["docs/architecture/**/*.md"]
+      },
+      "adr": {
+        "rule_set": "none",
+        "graph": false,
+        "globs": ["adr/**/*.md"]
+      },
+      "changelog": {
+        "rule_set": "none",
+        "graph": false,
+        "globs": ["docs/specs/**/changelog.md"]
+      },
+      "tasks": {
+        "rule_set": "none",
+        "graph": false,
+        "globs": ["docs/specs/**/tasks.md"]
+      },
+      "index": {
+        "rule_set": "none",
+        "graph": false,
+        "globs": ["docs/specs/README.md"]
+      },
       "idea": {
+        "rule_set": "idea",
         "globs": ["20*/**/*.md"],
         "required_fields": ["id", "title", "date", "tags", "status"],
         "status_values": ["萌芽", "探索中", "已落地", "搁置"],
