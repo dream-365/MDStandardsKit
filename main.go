@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/open-policy-agent/opa/rego"
 )
 
@@ -391,10 +392,51 @@ func loadRepoConfigBytes(b []byte) (RepoConfig, error) {
 }
 
 func buildRunPlan(std Standard, cfg RepoConfig) (runPlan, error) {
+	if err := validateStandardProfiles(std); err != nil {
+		return runPlan{}, err
+	}
 	if cfg.Mode == legacyMode {
 		return buildLegacyPlan(std, cfg)
 	}
 	return buildMultiPlan(std, cfg)
+}
+
+// validateStandardProfiles validates every profile, not only the enabled ones.
+// Disabled profiles are inert at runtime, but a typo there must not survive
+// into a later enablement or a direct opa eval. The empty rule_set stays legal
+// for legacy v1 bundles, where the effective type supplies the fallback.
+func validateStandardProfiles(std Standard) error {
+	for name, profile := range std.DocumentTypes {
+		switch profile.RuleSet {
+		case "spec", "idea", "none", "":
+		default:
+			return fmt.Errorf("document type %q has invalid rule_set %q", name, profile.RuleSet)
+		}
+		if profile.Graph && profile.RuleSet != "spec" {
+			return fmt.Errorf("document type %q: graph requires rule_set spec", name)
+		}
+		if profile.RuleSet == "idea" {
+			if err := validateIdeaProfile(name, &profile); err != nil {
+				return err
+			}
+		}
+		if name == "spec" {
+			// document_types.spec.globs is ignored; governed_globs is authoritative.
+			continue
+		}
+		if len(profile.Globs) == 0 {
+			return fmt.Errorf("document type %q has no globs", name)
+		}
+		for _, g := range profile.Globs {
+			if strings.TrimSpace(g) == "" {
+				return fmt.Errorf("document type %q: globs must not contain empty entries", name)
+			}
+			if _, err := doublestar.Match(g, ""); err != nil {
+				return fmt.Errorf("document type %q: glob %q: %w", name, g, err)
+			}
+		}
+	}
+	return nil
 }
 
 func buildLegacyPlan(std Standard, cfg RepoConfig) (runPlan, error) {
@@ -418,6 +460,9 @@ func buildLegacyPlan(std Standard, cfg RepoConfig) (runPlan, error) {
 		}
 		if len(profile.Globs) == 0 {
 			return runPlan{}, fmt.Errorf("document type %q has no globs", cfg.Type)
+		}
+		if err := validateIdeaProfile(cfg.Type, &profile); err != nil {
+			return runPlan{}, err
 		}
 		p.Globs = profile.Globs
 		p.Graph = profile.Graph
