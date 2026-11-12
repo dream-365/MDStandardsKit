@@ -229,3 +229,123 @@ func TestBuildRunPlan(t *testing.T) {
 		}
 	})
 }
+
+func TestStandardProfileValidation(t *testing.T) {
+	mutate := func(fn func(*Standard)) Standard {
+		std := testStandard()
+		fn(&std)
+		return std
+	}
+	legacyIdea := RepoConfig{Mode: legacyMode, Type: "idea"}
+	legacySpec := RepoConfig{Mode: legacyMode, Type: "spec"}
+
+	cases := []struct {
+		name    string
+		std     Standard
+		cfg     RepoConfig
+		wantErr bool
+	}{
+		{
+			name: "legacy v1 idea without rule_set stays legal",
+			std: mutate(func(s *Standard) {
+				s.StandardVersion = "1"
+				p := s.DocumentTypes["idea"]
+				p.RuleSet = ""
+				s.DocumentTypes["idea"] = p
+			}),
+			cfg: legacyIdea,
+		},
+		{
+			name: "invalid rule_set in disabled profile",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["changelog"]
+				p.RuleSet = "bogus"
+				s.DocumentTypes["changelog"] = p
+			}),
+			cfg:     legacySpec,
+			wantErr: true,
+		},
+		{
+			name: "graph on disabled none profile",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["changelog"]
+				p.Graph = true
+				s.DocumentTypes["changelog"] = p
+			}),
+			cfg:     legacySpec,
+			wantErr: true,
+		},
+		{
+			name: "invalid rule_set on legacy idea profile",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["idea"]
+				p.RuleSet = "bogus"
+				s.DocumentTypes["idea"] = p
+			}),
+			cfg:     legacyIdea,
+			wantErr: true,
+		},
+		{
+			name: "graph on legacy idea profile",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["idea"]
+				p.Graph = true
+				s.DocumentTypes["idea"] = p
+			}),
+			cfg:     legacyIdea,
+			wantErr: true,
+		},
+		{
+			name: "legacy idea profile missing structure fields",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["idea"]
+				p.RuleSet = ""
+				p.RequiredFields = nil
+				s.DocumentTypes["idea"] = p
+			}),
+			cfg:     legacyIdea,
+			wantErr: true,
+		},
+		{
+			name: "empty glob entry",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["changelog"]
+				p.Globs = []string{"docs/specs/**/changelog.md", " "}
+				s.DocumentTypes["changelog"] = p
+			}),
+			cfg:     legacySpec,
+			wantErr: true,
+		},
+		{
+			name: "empty globs on disabled profile",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["changelog"]
+				p.Globs = nil
+				s.DocumentTypes["changelog"] = p
+			}),
+			cfg:     legacySpec,
+			wantErr: true,
+		},
+		{
+			name: "malformed glob pattern",
+			std: mutate(func(s *Standard) {
+				p := s.DocumentTypes["changelog"]
+				p.Globs = []string{"docs/["}
+				s.DocumentTypes["changelog"] = p
+			}),
+			cfg:     legacySpec,
+			wantErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := buildRunPlan(tc.std, tc.cfg)
+			if tc.wantErr && err == nil {
+				t.Fatal("buildRunPlan() = nil error, want error")
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("buildRunPlan(): %v", err)
+			}
+		})
+	}
+}

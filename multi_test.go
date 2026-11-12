@@ -339,7 +339,7 @@ func TestMultiCoverageGraphTypeWithZeroDocs(t *testing.T) {
 	}
 }
 
-func TestMultiCoverageZeroDocWarning(t *testing.T) {
+func TestMultiZeroDocWarning(t *testing.T) {
 	root := multiRepo(t, `{"types":["spec","architecture","idea"]}`, map[string]string{
 		"2026/2026-11-01/idea.md": ideaContent("AABBCCDD", "测试想法", "2026-11-01", "萌芽"),
 	})
@@ -539,4 +539,80 @@ func TestPolicyFromHeadConfig(t *testing.T) {
 			t.Fatalf("unexpected dirty warning: %s", errs)
 		}
 	})
+}
+
+func TestMultiIdeaRulesScoped(t *testing.T) {
+	root := multiRepo(t, `{"types":["spec","architecture","changelog","idea"]}`, map[string]string{
+		"docs/specs/001/spec.md":      typedDoc("spec", "Approved", "docs/architecture/003.md"),
+		"docs/architecture/003.md":    typedDoc("architecture", "Approved"),
+		"docs/specs/001/changelog.md": typedDoc("changelog", "Implemented", "docs/architecture/003.md"),
+		"2026/2026-11-01/idea.md":     "---\ntype: idea\n" + strings.TrimPrefix(ideaContent("AABBCCDD", "", "2026-11-01", "萌芽"), "---\n"),
+	})
+
+	code, out, errs := runCLI(t, root, "-phase", "1", "-format", "json")
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1; stderr=%s out=%s", code, errs, out)
+	}
+	rep := decodeReport(t, out)
+
+	const ideaPath = "2026/2026-11-01/idea.md"
+	ideaTitle := false
+	for _, f := range rep.Findings {
+		if f.Document == ideaPath && strings.HasPrefix(f.Rule, "refs.") {
+			t.Fatalf("idea document received spec rule %q", f.Rule)
+		}
+		if f.Document != ideaPath && strings.HasPrefix(f.Rule, "idea.") {
+			t.Fatalf("%s received idea rule %q", f.Document, f.Rule)
+		}
+		if f.Document == ideaPath && f.Rule == "idea.empty_title" {
+			ideaTitle = true
+		}
+	}
+	if !ideaTitle {
+		t.Fatalf("findings = %+v, want idea.empty_title on %s", rep.Findings, ideaPath)
+	}
+}
+
+func TestMultiRoutingPhase(t *testing.T) {
+	root := multiRepo(t, `{"types":["spec","architecture"]}`, map[string]string{
+		"docs/specs/001/spec.md":   typedDoc("spec", "Approved", "docs/architecture/003.md"),
+		"docs/architecture/003.md": typedDoc("architecture", "Approved"),
+		"docs/specs/002-broken.md": "---\nstatus: Approved\n---\n\n# Body\n",
+	})
+
+	code, out, errs := runCLI(t, root, "-phase", "1", "-format", "json")
+	if code != 2 {
+		t.Fatalf("phase 1 exit = %d, want 2; stderr=%s out=%s", code, errs, out)
+	}
+	if strings.Contains(errs, "no governed document parsed") {
+		t.Fatalf("phase 1 failed on zero-parsed coverage instead of the routing error: %s", errs)
+	}
+	rep := decodeReport(t, out)
+	if rep.Stats.Parsed != 2 || len(rep.ExtractErrors) != 1 {
+		t.Fatalf("stats=%+v extract_errors=%+v, want parsed=2 with one routing error", rep.Stats, rep.ExtractErrors)
+	}
+	if !strings.Contains(rep.ExtractErrors[0].Reason, "missing frontmatter type") {
+		t.Fatalf("reason = %q", rep.ExtractErrors[0].Reason)
+	}
+
+	code, out, errs = runCLI(t, root, "-phase", "0", "-format", "json")
+	if code != 0 {
+		t.Fatalf("phase 0 exit = %d, want 0; stderr=%s", code, errs)
+	}
+	rep = decodeReport(t, out)
+	if len(rep.ExtractErrors) != 1 {
+		t.Fatalf("phase 0 extract_errors = %+v", rep.ExtractErrors)
+	}
+
+	code, out, _ = runCLI(t, root, "-dump-corpus")
+	if code != 0 {
+		t.Fatalf("dump exit = %d", code)
+	}
+	var corpus Corpus
+	if err := json.Unmarshal([]byte(out), &corpus); err != nil {
+		t.Fatalf("invalid corpus JSON: %v", err)
+	}
+	if len(corpus.ExtractErrors) != 1 || !strings.Contains(corpus.ExtractErrors[0].Reason, "missing frontmatter type") {
+		t.Fatalf("dump extract_errors = %+v", corpus.ExtractErrors)
+	}
 }
