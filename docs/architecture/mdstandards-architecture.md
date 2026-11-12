@@ -3,6 +3,7 @@ type: architecture
 status: Approved
 owner: example
 depends_on: []
+updated_at: 2026-11-12
 ---
 
 # MDStandardsKit 架构
@@ -27,6 +28,7 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 
 - `spec` 类型的两条规则：引用存在、目标状态可依赖。
 - `idea` 类型（v1.1）：仓库级类型声明、结构规则、独立内容评分卡；spec 的引用图规则不变。
+- 多文档类型（v1.2）：opt-in `{"types":[...]}`，按 frontmatter `type` 逐文件路由，`rule_set` 选择 `spec` / `idea` / `none`；legacy 单类型模式保持不变。
 - 一个二进制，内嵌 OPA 引擎，策略包从仓库读取。
 - 两个执行点：CI 合并时、Agent 写完自检时。
 - 三阶段 Rollout 与存量违规基线。
@@ -34,6 +36,8 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 ### v1 不包含
 
 - `spec` 类型的必填字段校验、status 枚举校验、状态流转校验、复审有效期、审批来源校验（全部 v2）；`idea` 类型的字段、标题、路径校验见 §5.2。
+- per-type baseline、per-type `dependable_statuses`、per-type 零文档覆盖断言（Phase 2）。
+- 声明式类型 schema / 规则 DSL（Phase 2）。
 - 循环引用检测（PDS-STD-004 §8.5.6 要求，v1 明确偏离，见 §9）。
 - pre-commit 执行点（v1.1）。
 - 包管理器分发。
@@ -46,8 +50,8 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
    CLI flags ───▶│ mdstandards (single binary) │
                  │                             │
                  │  1. load standard + config  │──▶ standard.json + .mdstandards.json
-                 │  2. resolve document type   │──▶ document_types[type].globs
-                 │  3. extract corpus          │──▶ 遍历 globs；按类型抽字段
+                 │  2. resolve run plan        │──▶ legacy 单类型 / multi 启用类型
+                 │  3. extract + route corpus  │──▶ 遍历 globs；按 frontmatter type 选档案
                  │  4. coverage assertions     │──▶ 零文档 / 需要图时零边 → exit 2
                  │  5. evaluate Rego           │──▶ 内嵌 OPA + policy/*.rego
                  │  6. baseline filter         │──▶ 精确三元组匹配
@@ -66,56 +70,82 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 | `extract.go` | 遍历受管文件、解析 frontmatter、构建语料 |
 | `normalize.go` | 路径归一化（D6 + D12） |
 | `report.go` | findings 结构、三种输出格式、基线过滤 |
+| `policy/types.rego` | legacy/multi 作用域 helper：`profile_for`、`is_spec_scope`、`is_idea_scope`、`dependable_for` |
 | `policy/*.rego` | spec 两条图规则 + idea 结构规则 + 载入失败守卫 |
-| `policy/data/standard.json` | 唯一事实来源；`document_types` 存放类型档案 |
+| `policy/data/standard.json` | 唯一事实来源；`document_types` 存放类型档案（v2 增加 `rule_set` / `graph`） |
 
 ### 3.1 taskscheck（独立二进制）
 
-`taskscheck` 不并入 mdstandards。它读取 `docs/specs/**/spec.md` 与同目录 `tasks.md`，校验任务 ID、依赖无环、Goal 专用覆盖、写冲突、完成标准与 `spec_sha256`。mdstandards 的 0/1/2 与 `-dump-corpus` 契约不变。边界原因见 `docs/designs/tasks-boundary-spike.md`：`document_types` 是仓库级配置，tasks 与 spec 需要在同一仓库共存。
+`taskscheck` 不并入 mdstandards。它读取 `docs/specs/**/spec.md` 与同目录 `tasks.md`，校验任务 ID、依赖无环、Goal 专用覆盖、写冲突、完成标准与 `spec_sha256`。mdstandards 的 0/1/2 与 `-dump-corpus` 契约不变。边界原因见 `docs/designs/tasks-boundary-spike.md`：tasks 与 spec 需要在同一仓库共存；多类型模式让 `type: tasks` 可以被 mdstandards 解析，但任务图规则仍由独立二进制负责。
 
 ## 4. 数据契约
 
-### 4.1 standard.json
+### 4.1 .mdstandards.json 与 standard.json
+
+仓库根 `.mdstandards.json` 有两种形态：
+
+```json
+{"type": "idea"}
+```
+
+```json
+{"types": ["spec", "architecture", "changelog", "tasks", "index"]}
+```
+
+- 文件缺失 → legacy spec；`type` / `types` 恰好一个非 null；值为 null 视为未提供。
+- legacy `type` 只允许 `spec` / `idea`，精确匹配、不 trim。
+- multi `types` 条目 trim 后必须非空且唯一；每个类型必须在 `document_types` 有档案。
+- `{}`、双键都非 null、未知键、尾随数据 → exit 2。
+
+`standard.json` v2 是唯一事实来源：
 
 ```json
 {
   "standard": {
-    "standard_version": "1",
+    "standard_version": "2",
     "governed_globs": ["docs/specs/**/*.md", "docs/architecture/**/*.md", "adr/**/*.md"],
     "dependable_statuses": ["Approved", "Published"],
-    "identity": "repo_relative_path"
-  }
-}
-```
-
-`document_types` 是可选的类型档案，键是仓库级 `.mdstandards.json` 声明的 `type`：
-
-```json
-{
-  "document_types": {
-    "idea": {
-      "globs": ["20*/**/*.md"],
-      "required_fields": ["id", "title", "date", "tags", "status"],
-      "status_values": ["萌芽", "探索中", "已落地", "搁置"],
-      "required_headings": ["一句话描述", "想法", "为什么有意思", "下一步"],
-      "id_pattern": "^[A-Z]{8}$",
-      "date_field": "date",
-      "graph": false,
-      "placeholder_markers": [
-        "<!-- 一句话说清楚这个想法是什么。写不出来就说明还没想清楚。 -->",
-        "<!-- 展开说说：它是什么样子的？怎么运作？ -->",
-        "<!-- 它解决了什么问题？或者只是让你好奇？ -->",
-        "optional:outside-voice",
-        "<!-- 如果想推进，最小的一步是什么？ -->"
-      ]
+    "identity": "repo_relative_path",
+    "document_types": {
+      "spec":         {"rule_set": "spec", "graph": true},
+      "architecture": {"rule_set": "spec", "graph": false, "globs": ["docs/architecture/**/*.md"]},
+      "adr":          {"rule_set": "none", "graph": false, "globs": ["adr/**/*.md"]},
+      "changelog":    {"rule_set": "none", "graph": false, "globs": ["docs/specs/**/changelog.md"]},
+      "tasks":        {"rule_set": "none", "graph": false, "globs": ["docs/specs/**/tasks.md"]},
+      "index":        {"rule_set": "none", "graph": false, "globs": ["docs/specs/README.md"]},
+      "idea": {
+        "rule_set": "idea",
+        "graph": false,
+        "globs": ["20*/**/*.md"],
+        "required_fields": ["id", "title", "date", "tags", "status"],
+        "status_values": ["萌芽", "探索中", "已落地", "搁置"],
+        "required_headings": ["一句话描述", "想法", "为什么有意思", "下一步"],
+        "id_pattern": "^[A-Z]{8}$",
+        "date_field": "date",
+        "placeholder_markers": [
+          "<!-- 一句话说清楚这个想法是什么。写不出来就说明还没想清楚。 -->",
+          "<!-- 展开说说：它是什么样子的？怎么运作？ -->",
+          "<!-- 它解决了什么问题？或者只是让你好奇？ -->",
+          "optional:outside-voice",
+          "<!-- 如果想推进，最小的一步是什么？ -->"
+        ]
+      }
     }
   }
 }
 ```
 
-`spec` 仍用顶层 `governed_globs`；其他类型用档案里的 `globs`。`graph: false` 表示该类型不要求依赖边，
-零依赖边覆盖断言不触发。宽 glob 让路径形状规则能看见两层/四层路径，而不是静默忽略。
-`optional:outside-voice` 是可选章节「外部的声音」的模板哨兵：整节缺失不报错，哨兵残留则命中占位符规则。
+语义：
+
+- legacy 模式下 `spec` 用顶层 `governed_globs`；其它 legacy 类型（idea）用档案里的 `globs`。
+- multi 模式的发现范围 = 顶层 `governed_globs` ∪ 所有启用类型的 `globs`；始终保留顶层基线，未启用类型命中的文件会报 routing error。
+- 文件按 frontmatter `type` 路由，不按命中的 glob；路径还必须命中该类型自己的 globs（`spec` 用顶层 globs）。
+- `rule_set`：`spec` / `idea` / `none`；multi 模式下启用类型必填，legacy v1 档案可缺省并按 effective type 回退。
+- `graph`：缺省 false；只有 `rule_set: spec` 允许 true；零边断言只统计 graph 文档。
+- `standard_version`：新二进制接受 `"1"` / `"2"`；multi 要求 `"2"`；缺失或其他值 exit 2。
+- 宽 glob 让 idea 路径形状规则能看见两层/四层路径，而不是静默忽略。
+- `optional:outside-voice` 是可选章节「外部的声音」的模板哨兵：整节缺失不报错，哨兵残留则命中占位符规则。
+- `loadStandard` 使用严格字段校验，未知字段 exit 2。
 
 外层的 `standard` 键是必须的：OPA 把数据文档按根合并，不用文件名做命名空间。
 没有这一层，`data.standard` 会是 undefined。
@@ -136,10 +166,12 @@ spec 声明依赖某篇架构文档，Agent 把这篇文档及其状态当作开
 ```
 
 每个受管文件必须产出一条 document 或一条 extract_error，不会被静默丢弃。
+同一 normalized path 只处理一次；`documents` 与 `extract_errors` 按 `path` 排序；空集合输出 `[]`。
 
-idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`sections`、`missing`、
-`date_invalid`、`tags_invalid`。这些字段都带 `omitempty`，只在 `docType == "idea"` 时填充，
-所以 spec 的 `-dump-corpus` 输出逐字节不变。
+multi 模式的 corpus 追加 `"mode": "multi"`，不输出 `document_type`；`Document.Type` 是 trim 后的
+canonical type。legacy 模式不输出 `mode`，`document_type` 语义不变。
+idea 语料额外带 `id`、`title`、`date`、`tags`、`sections`、`missing`、`date_invalid`、`tags_invalid`；
+这些字段都带 `omitempty`，只在 `rule_set == "idea"` 时填充，所以 spec 的 `-dump-corpus` 输出逐字节不变。
 
 ### 4.3 findings
 
@@ -164,7 +196,8 @@ idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`secti
 | `refs.missing_target` | `depends_on` 指向的目标不在受管语料中 |
 | `refs.status_not_dependable` | 目标状态不在 `dependable_statuses` 中，或缺失 |
 | `extract.parse_error` | 受管文件无法解析（无 frontmatter、YAML 非法等） |
-| `policy.load_error` | 策略包加载失败或标准缺失 |
+| `extract.routing_error` | multi 模式缺 type、未知/未启用 type、type/path 不匹配（reason 区分四类） |
+| `policy.load_error` | 策略包加载失败、标准缺失，或 multi 文档档案缺 `rule_set` |
 
 ### 4.4 基线
 
@@ -181,7 +214,7 @@ idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`secti
 |---|---|
 | 0 | 干净；或 `-phase 0` 的只报告模式；或 `-phase 1` 性能预算降级（≤200 篇受管文档单次超过 2 秒时只警告） |
 | 1 | 存在违规且处于阻断状态 |
-| 2 | 工具或抽取错误：策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、未降级时存在解析错误 |
+| 2 | 工具或抽取错误：策略/配置加载失败、版本不支持、零受管文档、需要依赖图的类型零依赖边、未降级时存在解析或 routing 错误 |
 
 ## 5. 规则与失败模式
 
@@ -192,6 +225,17 @@ idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`secti
 守卫（`status.rego`）：`data.standard.dependable_statuses` 不存在时产出
 `policy.load_error`，防止策略读不到标准却静默全绿。
 
+多类型作用域（`types.rego`）：legacy 模式按 `input.document_type` 保持原有 spec/idea 守卫；
+multi 模式按 `doc.type` 查档案、按 `rule_set` 选作用域。规则作用域矩阵：
+
+| `rule_set` | `refs.*` | `idea.*` | 可作为依赖目标 | 参与零边断言 |
+|---|---|---|---|---|
+| `spec` | 是 | 否 | 是 | 是（仅 `graph: true`） |
+| `idea` | 否 | 是 | 是 | 否 |
+| `none` | 否 | 否 | 是 | 否 |
+
+multi 档案缺 `rule_set` 时产出 `policy.load_error`，防止直接 `opa eval` 时静默全绿。
+
 | 失败场景 | 处理 | 是否静默 |
 |---|---|---|
 | glob 写错，匹配零个文件 | 覆盖断言 → exit 2 | 否 |
@@ -199,13 +243,13 @@ idea 语料额外带 `document_type`、`id`、`title`、`date`、`tags`、`secti
 | 策略包编译失败 / 标准缺失 | exit 2 | 否 |
 | 单个文件解析失败 | 计入 `extract_errors`，phase ≥ 1 且未降级时 exit 2 | 否 |
 | phase 1 单次门禁超过 2 秒且 ≤200 篇受管文档 | 打印警告并降级为只警告；覆盖断言与策略加载错误仍 exit 2；phase 2 不降级 | 否（有警告） |
-| Agent 修改 `policy/` 或 `baseline.json` | `-policy-from-head` 从 HEAD 读策略；策略或 baseline 有未提交改动时降级为只报告 | 否（有警告） |
+| Agent 修改 `policy/`、`.mdstandards.json` 或 `baseline.json` | `-policy-from-head` 从 HEAD 读策略与配置；有未提交改动时降级为只报告 | 否（有警告） |
 | Agent hook 根本没装 | 无检测手段 | **是，已知关键缺口** |
 
 ### 5.2 idea 类型规则
 
-`policy/idea.rego` 只在 `input.document_type == "idea"` 时生效；`.mdstandards.json` 损坏、
-type 未知或含未知键时，CLI 在求值前 exit 2。
+`policy/idea.rego` 只在 `rule_set == "idea"`（legacy 下为 `input.document_type == "idea"`）时生效；
+`.mdstandards.json` 损坏、type 未知或含未知键时，CLI 在求值前 exit 2。
 
 | 规则 | 含义 |
 |---|---|
@@ -246,11 +290,15 @@ type 未知或含未知键时，CLI 在求值前 exit 2。
 闸门要拦的对象和闸门本身在同一个工作区里。因此：
 
 - 二进制只内嵌 Rego **引擎**，策略包以仓库内的 bundle 为准，避免两套权威来源。
-- `-policy-from-head` 从已提交的 `HEAD` 读取策略；工作区策略或 `baseline.json` 有未提交改动时
-  打印警告并降级为只报告，不让 Agent 改完规则或基线立刻重跑。
-- `policy/` 与 `baseline.json` 已由 `.github/CODEOWNERS` 保护。
+- `-policy-from-head` 从已提交的 `HEAD` 读取策略与 `.mdstandards.json`；工作区策略、配置或
+  `baseline.json` 有未提交改动时打印警告并降级为只报告，不让 Agent 改完规则、类型列表或基线立刻重跑。
+- `policy/`、`.mdstandards.json` 与 `baseline.json` 已由 `.github/CODEOWNERS` 保护。
+- `standard.json` 的 `rule_set` / `globs` 与 `.mdstandards.json` 的 `types` 同属 load-bearing；
+  未使用 `--policy-from-head` 的运行点仍可能被工作区配置降级绕过，属已知残留风险。
 - frontmatter 是 Agent 写出的不可信输入：单文件上限 1 MiB，疑似 YAML 别名展开
   （`*` 超过 100 个或 `<<` 超过 10 个）直接拒绝，策略求值 10 秒超时。
+- multi 模式按 frontmatter `type` 路由，但路径必须命中该类型 globs；仍需 CODEOWNERS/评审保护
+  `type:` 字段，防止把 spec 改成同一路径允许范围内的其他类型。
 - 已知残留风险：`status: Approved` 由同一条写入路径设置，策略无法区分人和 Agent。
   v1 只降低可见性成本，不做来源校验。
 
@@ -268,7 +316,8 @@ mdstandards -root . -policy ./policy -phase 1 -format json
 ```
 
 `-policy` 相对**当前工作目录**解析；`-root` 只决定哪些文件受管。
-使用 `-policy-from-head` 时，策略目录必须在 `-root` 之内。
+使用 `-policy-from-head` 时，策略目录必须在 `-root` 之内；`.mdstandards.json` 也从 HEAD 读取，
+工作区不一致时降级为只报告。
 
 ## 8. Rollout
 
@@ -293,6 +342,10 @@ mdstandards -root . -policy ./policy -phase 1 -format json
 2. 谁有权把 `status` 改成 `Approved`，v2 用什么来源校验机制。
 3. 是否需要复审有效期（`reviewed_at` + TTL）。
 4. 多仓库语料如何合并。
+5. per-type `dependable_statuses` 是否进入 v2。
+6. per-type 零文档是否升级为覆盖断言。
+7. 是否需要类型声明与路径的更强绑定（签名或 CODEOWNERS 校验）。
+8. `standard_version: 1` 的保留期限与弃用策略。
 
 ## 11. 已批准的决策
 
@@ -307,9 +360,13 @@ mdstandards -root . -policy ./policy -phase 1 -format json
 | D7 | CI 与 hook 分开算延迟预算 |
 | D8 | 继续独立 OPA 方案，不扩展既有 PDS 校验器 |
 | D9/D10 | 状态词汇取 `Approved` + `Published`，逐字匹配 |
-| D11 | 仓库级 `.mdstandards.json` 只声明 type；globs 只在 policy 档案里 |
+| D11 | 仓库级 `.mdstandards.json` 声明 type；globs 只在 policy 档案里 |
 | D12 | `idea` 结构错误阻断，内容评分只诊断；空正文/`暂无` 合法 |
 | D13 | 内容评分复用 `qualitycheck`，增加 `guess` 字段和报告标题 flag；评分引擎不重写 |
-| D11 | 策略从 `HEAD` 读，策略文件受 CODEOWNERS 保护 |
-| D12 | `..` 解析后仍在仓库内则接受，越界才违规 |
 | D14 | tasks 用独立 `taskscheck`；Goal 硬覆盖、REQ 只报告；`tasks.md` 用 `spec_sha256` 钉住 `spec.md` |
+| D15 | 策略与 `.mdstandards.json` 从 `HEAD` 读，受 CODEOWNERS 保护 |
+| D16 | `..` 解析后仍在仓库内则接受，越界才违规 |
+| D17 | 多类型模式 opt-in：`.mdstandards.json` 用 `{"types":[...]}`；`type` 与 `types` 恰好一个非 null |
+| D18 | 文件按 frontmatter `type` 路由；路径必须命中该类型 globs；顶层 `governed_globs` 始终参与发现 |
+| D19 | 规则作用域用 `rule_set`（`spec` / `idea` / `none`）；legacy 只允许 `spec` / `idea` |
+| D20 | `standard_version` 升到 2；新二进制接受 1/2，multi 要求 2 |
